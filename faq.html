@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>常見問題 FAQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{ --paper:#FAF5EA; --ink:#3A3029; --tea:#247A5A; --yolk:#F3B72B; --indigo:#1E6B4E; --card:#FFFFFF; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'Noto Sans TC',-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;font-size:16px;line-height:1.6}
+.wrap{max-width:480px;margin:0 auto;padding:14px 14px 110px}
+header{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
+h1{font-size:24px;font-weight:900;margin:0}
+.langbtn{border:2.5px solid var(--ink);background:var(--card);border-radius:12px;padding:6px 12px;
+  font-weight:800;cursor:pointer;box-shadow:2px 2px 0 var(--ink);font-family:inherit;font-size:14px}
+details{background:var(--card);border:2.5px solid var(--ink);border-radius:16px;box-shadow:3px 3px 0 var(--ink);
+  margin-bottom:12px;padding:0 14px}
+summary{font-weight:800;font-size:15.5px;padding:13px 0;cursor:pointer;list-style:none}
+summary::before{content:"▸ ";color:var(--tea)}
+details[open] summary::before{content:"▾ "}
+.body{padding:0 0 14px;font-size:14.5px}
+.body a{color:var(--tea);font-weight:700}
+.linkbtn{display:block;border:2px solid var(--ink);border-radius:12px;background:var(--paper);
+  padding:9px 12px;margin:6px 0;font-weight:700;text-decoration:none;color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+td{border-bottom:1px solid #e5ddc9;padding:5px 4px}
+.back{display:inline-block;margin-top:8px;border:2.5px solid var(--ink);border-radius:14px;background:var(--yolk);
+  color:var(--ink);font-weight:800;padding:10px 16px;text-decoration:none;box-shadow:3px 3px 0 var(--ink)}
+footer{font-size:11.5px;opacity:.55;text-align:center;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="pageTitle"></h1>
+    <button class="langbtn" id="langBtn" onclick="toggleLang()">EN</button>
+  </header>
+  <div id="content"></div>
+
+  <!-- =====================================================================
+       CREDITS BLOCK — formal grant attribution + logos.
+       ✏️ EDIT HERE:
+       1. Put the two logo files in the images/ folder with these exact
+          names: images/hpa-logo.png and images/ntu-logo.png
+          (any missing logo hides itself automatically, nothing breaks)
+       2. Fill in the lab name, PI, and — if you want — your own name in
+          CREDITS below (in the script section). The 計畫主持人/計畫執行
+          format is the standard grant-credits convention in Taiwan, so
+          listing the project staff reads as required attribution, not
+          self-promotion. Delete the "executor" lines to leave yourself off.
+       ===================================================================== -->
+  <div class="card" style="background:var(--card);border:2.5px solid var(--ink);border-radius:16px;box-shadow:3px 3px 0 var(--ink);padding:14px;margin-bottom:12px;text-align:center">
+    <div style="display:flex;justify-content:center;align-items:center;gap:18px;margin-bottom:10px">
+      <img src="images/hpa-logo.png" alt="衛生福利部國民健康署" style="height:44px" onerror="this.style.display='none'">
+      <img src="images/ntu-logo.png" alt="國立臺灣大學" style="height:44px" onerror="this.style.display='none'">
+    </div>
+    <div id="credits" style="font-size:12.5px;line-height:1.7;opacity:.85"></div>
+  </div>
+
+  <a class="back" href="pair-it.html" id="backBtn"></a>
+  <footer id="foot"></footer>
+</div>
+
+<script src="foods-data.js"></script>
+<script src="pet-shared.js"></script>
+<script>
+/* =====================================================================
+   ✏️ EDIT HERE — LINKS. Replace every "#" with the real web address.
+   Anything still "#" shows up but goes nowhere, so fill these before
+   launch (or delete the line if you don't want that link).
+   ===================================================================== */
+const LINKS = {
+  hpaMain:   "#",   /* HPA 國民健康署 main site */
+  hpaGrains: "#",   /* HPA whole grains / 全穀雜糧 resource page */
+  hpaSodium: "#",   /* HPA sodium reduction resource page */
+  instagram: "#",   /* your project Instagram */
+  facebook:  "#",   /* your project Facebook */
+  cookbook:  "#",   /* International Whole Grains Cookbook (digital version) */
+};
+
+/* =====================================================================
+   ✏️ EDIT HERE — FAQ content. Each item = one expandable question.
+   q = question, a = answer (HTML allowed, e.g. links and <br>).
+   Add, remove, or reorder items freely — keep the structure the same.
+   ===================================================================== */
+const FAQ = [
+  { q: { zh:"這是什麼？誰做的？", en:"What is this? Who made it?" },
+    a: { zh:`這兩個小工具（<b>配什麼好？</b>和<b>營養大對決</b>）是「外食也能吃得好——大學場域全穀雜糧與減鈉健康飲食促進計畫」的一部分，由國立臺灣大學公共衛生學院團隊製作，衛生福利部國民健康署補助。我們的理念是「加法飲食」：不說哪些食物不能吃，而是看看常吃的餐點還能<b>加</b>點什麼。`,
+      en:`These two tools (<b>Pair It</b> and <b>Nutrition Showdown</b>) are part of "Eating Out Can Be Balanced," a whole-grain and sodium-reduction health promotion project at National Taiwan University's College of Public Health, supported by the Health Promotion Administration, MOHW. Our philosophy is addition-based: no food is off-limits — we look at what you can <b>add</b> to meals you already eat.` } },
+
+  { q: { zh:"金幣和小夥伴怎麼玩？", en:"How do coins and the Campus Buddy work?" },
+    a: { zh:`答題、配餐、每日簽到都會得到金幣，用金幣餵養你的校園小夥伴，牠會慢慢長大，還能買配件打扮牠。兩個小遊戲共用同一隻小夥伴！<br><br><table>
+      <tr><td>每日簽到</td><td>+10 🪙</td></tr>
+      <tr><td>大對決答對一題</td><td>+2 🪙（每日上限 30）</td></tr>
+      <tr><td>完成一次配餐</td><td>+5 🪙（每日上限 15）</td></tr>
+      <tr><td>分享給朋友</td><td>+5 🪙（每日一次）</td></tr></table>`,
+      en:`Answering questions, building meals, and daily check-ins earn coins. Feed them to your Campus Buddy to help it grow, and buy accessories to dress it up. Both games share one buddy!<br><br><table>
+      <tr><td>Daily check-in</td><td>+10 🪙</td></tr>
+      <tr><td>Correct quiz answer</td><td>+2 🪙 (max 30/day)</td></tr>
+      <tr><td>Completing a meal</td><td>+5 🪙 (max 15/day)</td></tr>
+      <tr><td>Sharing with friends</td><td>+5 🪙 (once/day)</td></tr></table>` } },
+
+  { q: { zh:"我的小夥伴／金幣不見了？", en:"My buddy / coins disappeared?" },
+    a: { zh:`小夥伴住在<b>你手機的瀏覽器</b>裡。最常見的原因：<br>
+      1️⃣ 用 LINE 掃 QR code 會開在 LINE 內建瀏覽器，和 Safari/Chrome 是<b>分開的</b>——請固定用同一個瀏覽器開啟（可點 LINE 右下角「用預設瀏覽器開啟」）。<br>
+      2️⃣ 清除瀏覽紀錄／App 資料會一併清掉小夥伴。<br>
+      3️⃣ 換手機或換裝置不會帶著走。<br>放心，再養一隻很快的！`,
+      en:`Your buddy lives in <b>your phone's browser</b>. Common causes:<br>
+      1️⃣ Scanning a QR code in LINE opens LINE's built-in browser, which is <b>separate</b> from Safari/Chrome — stick to one browser (in LINE, tap "Open in default browser").<br>
+      2️⃣ Clearing browsing data also clears your buddy.<br>
+      3️⃣ Progress doesn't transfer between devices.<br>Don't worry — raising a new one is quick!` } },
+
+  { q: { zh:"營養數據是哪裡來的？", en:"Where does the nutrition data come from?" },
+    a: { zh:`主要參考衛福部食品營養成分資料庫與實際產品營養標示，以常見一份的份量估算。數值為<b>近似值</b>，實際會因店家、品牌、份量而不同；本工具為衛教用途，不能取代個人化的醫療或營養建議。`,
+      en:`Values are based on Taiwan's FDA food composition database and real product labels, estimated per typical serving. They are <b>approximations</b> — actual values vary by shop, brand, and portion. This tool is for health education and isn't a substitute for personalized medical or nutrition advice.` } },
+
+  { q: { zh:"想學更多健康飲食資訊？", en:"Want to learn more?" },
+    a: { zh:`國民健康署有很多實用資源：<br>
+      <a class="linkbtn" href="${LINKS.hpaMain}">🏛️ 國民健康署官網</a>
+      <a class="linkbtn" href="${LINKS.hpaGrains}">🌾 全穀雜糧這樣吃</a>
+      <a class="linkbtn" href="${LINKS.hpaSodium}">🧂 聰明減鈉小技巧</a>`,
+      en:`The Health Promotion Administration has great resources:<br>
+      <a class="linkbtn" href="${LINKS.hpaMain}">🏛️ HPA official site</a>
+      <a class="linkbtn" href="${LINKS.hpaGrains}">🌾 Whole grains guide</a>
+      <a class="linkbtn" href="${LINKS.hpaSodium}">🧂 Smart sodium-reduction tips</a>` } },
+
+  { q: { zh:"追蹤我們＆免費食譜書！", en:"Follow us & free cookbook!" },
+    a: { zh:`活動消息、每週營養對決題目、試吃活動預告都在社群上：<br>
+      <a class="linkbtn" href="${LINKS.instagram}">📸 Instagram</a>
+      <a class="linkbtn" href="${LINKS.facebook}">👍 Facebook</a>
+      也別錯過我們的<b>世界全穀食譜書</b>（中英雙語、免費電子版）：<br>
+      <a class="linkbtn" href="${LINKS.cookbook}">📖 下載食譜書</a>`,
+      en:`Event news, weekly showdown questions, and tasting-event announcements are on our socials:<br>
+      <a class="linkbtn" href="${LINKS.instagram}">📸 Instagram</a>
+      <a class="linkbtn" href="${LINKS.facebook}">👍 Facebook</a>
+      And don't miss our bilingual <b>International Whole Grains Cookbook</b> (free digital version):<br>
+      <a class="linkbtn" href="${LINKS.cookbook}">📖 Get the cookbook</a>` } },
+
+  { q: { zh:"你們會收集我的資料嗎？", en:"Do you collect my data?" },
+    a: { zh:`不會。沒有帳號、沒有註冊，你的金幣和小夥伴只存在你自己的裝置上，不會傳送給我們。網站可能使用匿名的訪客<b>計數</b>（只算人次，不識別個人、不用 cookie），用於計畫成效報告。`,
+      en:`No. There are no accounts and no sign-ups — your coins and buddy exist only on your own device and are never sent to us. The site may use anonymous visit <b>counting</b> (counts only, no personal identification, no cookies) for program evaluation reporting.` } },
+];
+
+const UI = {
+  title:{ zh:"常見問題", en:"FAQ" },
+  back: { zh:"← 回到「配什麼好？」", en:"← Back to Pair It" },
+  foot: { zh:"國立臺灣大學公共衛生學院 · 衛生福利部國民健康署補助", en:"NTU College of Public Health · Supported by the Health Promotion Administration, MOHW" },
+};
+
+/* =====================================================================
+   ✏️ EDIT HERE — formal credits (shown at the bottom of this page).
+   Replace 〔...〕 with real names. To leave yourself off, delete the
+   two lines containing 計畫執行 / Project coordinator.
+   ===================================================================== */
+const CREDITS = {
+  zh: `本網站為衛生福利部國民健康署<b>115年度營養及健康飲食促進方案補助計畫</b>成果<br>
+       計畫名稱：「外食也能吃得好——大學場域全穀雜糧與減鈉健康飲食促進計畫」<br>
+       執行單位：國立臺灣大學公共衛生學院〔研究室名稱〕<br>
+       計畫主持人：〔林先和〕教授 · 計畫執行：〔你的名字〕`,
+  en: `Developed under the Health Promotion Administration (MOHW) <b>2026 Nutrition and Healthy Eating Promotion Program</b><br>
+       Project: "Eating Out Can Be Balanced — Whole Grain &amp; Sodium-Reduction Promotion on a University Campus"<br>
+       National Taiwan University, College of Public Health 〔Lab name〕<br>
+       Principal Investigator: Prof. 〔Lin Hsien-ho〕 · Project coordinator: 〔Your name〕`,
+};
+let lang="zh";
+function toggleLang(){
+  lang=lang==="zh"?"en":"zh";
+  document.getElementById("langBtn").textContent=lang==="zh"?"EN":"中";
+  document.documentElement.lang=lang==="zh"?"zh-Hant":"en";
+  if(window.Buddy) Buddy.setLang(lang);
+  render();
+}
+function render(){
+  document.getElementById("pageTitle").textContent="❓ "+UI.title[lang];
+  document.getElementById("backBtn").textContent=UI.back[lang];
+  document.getElementById("foot").textContent=UI.foot[lang];
+  document.getElementById("credits").innerHTML=CREDITS[lang];
+  document.getElementById("content").innerHTML=FAQ.map(item=>
+    `<details><summary>${item.q[lang]}</summary><div class="body">${item.a[lang]}</div></details>`).join("");
+}
+render();
+</script>
+</body>
+</html>

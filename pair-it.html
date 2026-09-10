@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ✏️ EDIT HERE: the browser-tab title -->
+<title>配什麼好？ Pair It</title>
+
+<!-- Fonts (needs internet on the visitor's phone; falls back to system fonts) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+/* =====================================================
+   ✏️ EDIT HERE: COLORS — change these six values and the
+   whole app recolors itself. Use https://htmlcolorcodes.com
+   to pick colors.
+   ===================================================== */
+:root{
+  --paper:#FAF5EA;   /* page background (rice paper) */
+  --ink:#3A3029;     /* text + outlines (soy ink) */
+  --tea:#247A5A;     /* main app color (tea green) */
+  --yolk:#F3B72B;    /* highlights + coins (egg yolk) */
+  --chili:#ED7848;   /* gentle sodium notes (use sparingly) */
+  --card:#FFFFFF;    /* card background */
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'Noto Sans TC',-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;
+  font-size:16px;line-height:1.5}
+.wrap{max-width:480px;margin:0 auto;padding:14px 14px 110px}
+.num{font-family:'Fredoka','Noto Sans TC',sans-serif}
+
+/* ---------- header ---------- */
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 14px}
+h1{font-size:26px;font-weight:900;margin:0;letter-spacing:.5px}
+h1 .dot{color:var(--tea)}
+.langbtn{border:2.5px solid var(--ink);background:var(--card);border-radius:12px;padding:6px 12px;
+  font-weight:800;cursor:pointer;box-shadow:2px 2px 0 var(--ink);font-family:inherit;font-size:14px}
+.langbtn:active{transform:translate(2px,2px);box-shadow:none}
+.tagline{font-size:14px;opacity:.8;margin:-8px 0 14px}
+
+/* ---------- sticker components (shared look) ---------- */
+.card{background:var(--card);border:2.5px solid var(--ink);border-radius:18px;
+  box-shadow:3px 3px 0 var(--ink);padding:14px;margin-bottom:14px}
+.card h2{font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:6px}
+.chipgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip{border:2.5px solid var(--ink);background:var(--card);border-radius:14px;padding:10px 8px;
+  box-shadow:2px 2px 0 var(--ink);cursor:pointer;font-family:inherit;font-size:14.5px;font-weight:700;
+  text-align:left;display:flex;align-items:center;gap:8px;color:var(--ink)}
+.chip:active{transform:translate(2px,2px);box-shadow:none}
+.chip .e{font-size:24px}
+.chip.small{padding:8px 8px;font-size:13.5px}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tab{border:2px solid var(--ink);border-radius:999px;background:var(--card);padding:6px 12px;
+  font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;color:var(--ink)}
+.tab.on{background:var(--tea);color:#fff}
+.bigbtn{display:block;width:100%;border:2.5px solid var(--ink);border-radius:16px;background:var(--tea);
+  color:#fff;font-weight:900;font-size:18px;padding:14px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);
+  font-family:inherit;margin-top:6px}
+.bigbtn:active{transform:translate(2px,2px);box-shadow:none}
+.bigbtn.alt{background:var(--yolk);color:var(--ink)}
+.ghost{background:var(--card);color:var(--ink);font-weight:700;font-size:14px;padding:9px;box-shadow:2px 2px 0 var(--ink)}
+
+/* ---------- meal tray ---------- */
+.tray{position:sticky;top:8px;z-index:50}
+.trayitems{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;margin-bottom:8px}
+.titem{display:flex;align-items:center;gap:4px;background:var(--paper);border:2px solid var(--ink);
+  border-radius:999px;padding:4px 8px;font-size:13.5px;font-weight:700}
+.titem button{border:none;background:none;font-size:14px;cursor:pointer;padding:0 2px;color:var(--ink)}
+.totals{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.tot{background:var(--paper);border:2px solid var(--ink);border-radius:12px;padding:6px 2px}
+.tot b{display:block;font-size:17px}
+.tot span{font-size:11px;opacity:.75}
+.wgbadge{margin-top:8px;font-size:13px;font-weight:700;color:var(--tea)}
+.empty{font-size:13.5px;opacity:.6}
+
+/* ---------- pop-up sticker bubbles (the app's signature) ---------- */
+.bubblezone{position:relative;height:0}
+.bubble{position:absolute;left:50%;top:-6px;transform:translateX(-50%) rotate(-3deg) scale(.6);
+  background:var(--yolk);border:2.5px solid var(--ink);border-radius:16px;box-shadow:3px 3px 0 var(--ink);
+  padding:8px 14px;font-weight:900;font-size:16px;white-space:nowrap;z-index:80;opacity:0;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .2s}
+.bubble.on{opacity:1;transform:translateX(-50%) rotate(-3deg) scale(1) translateY(-14px)}
+.bubble.watch{background:#FBE3DC;border-color:var(--chili);color:var(--ink);box-shadow:3px 3px 0 var(--chili)}
+@media (prefers-reduced-motion:reduce){.bubble{transition:opacity .2s}}
+
+.note{font-size:13px;background:#FBE3DC;border:2px solid var(--chili);border-radius:12px;padding:8px 10px;margin-top:10px}
+.suggesthead{font-size:14px;font-weight:900;margin:2px 0 8px}
+.summary{text-align:center}
+.summary .face{font-size:52px}
+hr.dash{border:none;border-top:2px dashed var(--ink);opacity:.3;margin:12px 0}
+
+/* ---------- help overlay + browse-all sheet ---------- */
+.helpbtn{border:2.5px solid var(--ink);background:var(--yolk);border-radius:12px;padding:6px 11px;
+  font-weight:900;cursor:pointer;box-shadow:2px 2px 0 var(--ink);font-family:inherit;font-size:14px}
+.helpbtn:active{transform:translate(2px,2px);box-shadow:none}
+.ov{position:fixed;inset:0;background:rgba(51,40,31,.45);z-index:940;display:none}
+.ov.on{display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--paper);width:100%;max-width:480px;border-radius:22px 22px 0 0;
+  border:2.5px solid var(--ink);border-bottom:none;padding:18px 16px 24px;max-height:86vh;
+  display:flex;flex-direction:column}
+.sheet h2{margin:0 0 10px;font-size:19px;display:flex;justify-content:space-between;align-items:center}
+.xbtn{border:2px solid var(--ink);background:var(--card);border-radius:10px;padding:4px 10px;
+  font-weight:700;cursor:pointer;box-shadow:2px 2px 0 var(--ink);font-family:inherit}
+.helpsteps{font-size:15px;line-height:1.7;padding-left:2px}
+.helpsteps li{margin-bottom:8px;list-style:none}
+.searchbox{border:2.5px solid var(--ink);border-radius:12px;padding:10px 12px;font-size:15px;
+  font-family:inherit;width:100%;margin-bottom:10px;background:var(--card)}
+.browlist{overflow-y:auto;flex:1;min-height:120px}
+.browrow{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;
+  border:none;border-bottom:1.5px solid #e8e0cc;background:none;padding:11px 4px;font-family:inherit;
+  font-size:15px;font-weight:700;color:var(--ink);cursor:pointer;text-align:left}
+.browrow .meta{font-size:11.5px;font-weight:400;opacity:.6;white-space:nowrap}
+.browrow.in{opacity:.45}
+footer{font-size:11.5px;opacity:.55;text-align:center;margin-top:20px}
+a{color:var(--tea)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="appTitle">配什麼好<span class="dot">？</span></h1>
+    <div style="display:flex;gap:6px">
+      <button class="helpbtn" onclick="openHelp()" aria-label="how to use">❓</button>
+      <button class="langbtn" id="langBtn" onclick="toggleLang()">EN</button>
+    </div>
+  </header>
+  <p class="tagline" id="tagline"></p>
+
+  <!-- meal tray (always visible once started) -->
+  <div class="card tray" id="trayCard" style="display:none">
+    <h2 id="trayTitle"></h2>
+    <div class="trayitems" id="trayItems"></div>
+    <div class="bubblezone" id="bubbleZone"></div>
+    <div class="totals" id="totals"></div>
+    <div class="wgbadge" id="wgBadge"></div>
+    <div id="sodiumNote"></div>
+  </div>
+
+  <div id="screen"></div>
+
+  <footer id="foot"></footer>
+</div>
+
+<!-- how-to-use overlay (content filled by script) -->
+<div class="ov" id="helpOv"><div class="sheet" id="helpSheet"></div></div>
+<!-- browse-all-foods sheet (content filled by script) -->
+<div class="ov" id="browOv"><div class="sheet" id="browSheet"></div></div>
+
+<!-- Load the shared food data + pet system (must be in the same folder) -->
+<script src="foods-data.js"></script>
+<script src="pet-shared.js"></script>
+
+<script>
+/* =====================================================================
+   ✏️ EDIT HERE: all the words the app shows, in both languages.
+   Change the text inside the quotes; keep the structure the same.
+   ===================================================================== */
+const UI = {
+  tagline:    { zh:"外食也能吃得好——看看你的餐點還能加點什麼！", en:"Eating out can be balanced — see what you could add to your meal!" },
+  startPreset:{ zh:"🍱 從常見餐點開始", en:"🍱 Start from a common meal" },
+  startBuild: { zh:"🧑‍🍳 自己選主食", en:"🧑‍🍳 Pick your own main" },
+  chooseMain: { zh:"你今天吃什麼？", en:"What are you having?" },
+  myMeal:     { zh:"我的餐點", en:"My meal" },
+  suggest:    { zh:"配什麼好？試試這些 👇", en:"What pairs well? Try these 👇" },
+  more:       { zh:"🔍 更多可以加的", en:"🔍 More things to add" },
+  less:       { zh:"收起來", en:"Show less" },
+  done:       { zh:"完成我的搭配 ✅", en:"Finish my meal ✅" },
+  restart:    { zh:"↺ 再配一餐", en:"↺ Build another meal" },
+  protein:    { zh:"蛋白質", en:"Protein" },
+  fiber:      { zh:"纖維", en:"Fiber" },
+  sodium:     { zh:"鈉", en:"Sodium" },
+  calcium:    { zh:"鈣", en:"Calcium" },
+  wgCount:    { zh:"🌾 全穀雜糧 ×", en:"🌾 Whole grains ×" },
+  sodiumHigh: { zh:"💡 小提醒：這餐的鈉比較多，湯或醬料可以少一點、其他餐搭配清淡一些就好，不用有壓力！", en:"💡 Heads-up: this meal is on the salty side. Going lighter on soup/sauce or at other meals balances it out — no stress!" },
+  addedWG:    { zh:"全穀雜糧 +1！🌾", en:"Whole grain +1! 🌾" },
+  addedGeneric:{ zh:"好搭配！✨", en:"Nice pairing! ✨" },
+  watchNa:    { zh:"這項鈉較多，留意份量就好", en:"A bit salty — just mind the portion" },
+  sumTitle:   { zh:"今天的搭配完成！", en:"Meal complete!" },
+  sumBody:    { zh:"你為這一餐加了", en:"You added to this meal:" },
+  sumNothing: { zh:"下次試試多加一樣小東西，營養就默默升級！", en:"Next time, try adding one small thing — easy nutrition upgrade!" },
+  share:      { zh:"📣 分享給朋友 (+5 🪙)", en:"📣 Share with friends (+5 🪙)" },
+  shareText:  { zh:"我在「配什麼好？」幫餐點升級了！你也來試試 →", en:"I upgraded my meal on Pair It! Try it →" },
+  copied:     { zh:"連結已複製！貼給朋友吧", en:"Link copied — send it to a friend!" },
+  empty:      { zh:"先選一個餐點開始", en:"Pick a meal to start" },
+  browseAll:  { zh:"📖 瀏覽全部食物", en:"📖 Browse all foods" },
+  searchPh:   { zh:"搜尋食物…", en:"Search foods…" },
+  added:      { zh:"✓ 已加入", en:"✓ Added" },
+  helpTitle:  { zh:"怎麼玩？", en:"How it works" },
+  /* ✏️ EDIT HERE: the how-to-use steps shown in the pop-up */
+  helpSteps:  { zh:["🍱 選一個你正要吃（或常吃）的餐點","➕ 看看「配什麼好」的建議，點一下加進餐盤；也可以「瀏覽全部食物」自己挑","💡 加分營養會跳出小貼紙；鈉比較多也會溫柔提醒","🪙 完成搭配賺金幣，餵養你的校園小夥伴！"],
+                en:["🍱 Pick a meal you're about to eat (or often eat)","➕ Tap the pairing suggestions to add them — or browse all foods and choose your own","💡 Nutrition wins pop up as stickers; salty picks get a gentle heads-up","🪙 Finish your meal to earn coins and feed your Campus Buddy!"] },
+  gotIt:      { zh:"開始配餐！", en:"Let's go!" },
+  foot:       { zh:"國立臺灣大學公共衛生學院 · 衛生福利部國民健康署補助 · 營養資訊僅供參考", en:"NTU College of Public Health · Supported by the Health Promotion Administration, MOHW · Nutrition info is approximate" },
+};
+
+/* ============================ app state ============================ */
+let lang = "zh";
+let meal = [];          // list of FOOD ids in the current meal
+let showMore = false;
+let finished = false;
+
+const F = id => FOODS.find(f => f.id === id);
+const t  = k  => UI[k][lang];
+const nm = f  => lang === "zh" ? f.zh : f.en;
+
+function toggleLang(){
+  lang = lang === "zh" ? "en" : "zh";
+  document.getElementById("langBtn").textContent = lang === "zh" ? "EN" : "中";
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  if (window.Buddy) Buddy.setLang(lang);
+  render();
+}
+
+/* ============================ rendering ============================ */
+function render(){
+  document.getElementById("tagline").textContent = t("tagline");
+  document.getElementById("foot").innerHTML = t("foot") + ' · <a href="faq.html">FAQ</a>';
+  renderTray();
+  const s = document.getElementById("screen");
+  if (finished)            s.innerHTML = summaryHTML();
+  else if (meal.length===0) s.innerHTML = startHTML();
+  else                      s.innerHTML = pairingHTML();
+}
+
+function startHTML(){
+  const presets = MEALS.map(m =>
+    `<button class="chip" onclick="pickPreset('${m.id}')">
+       <span class="e">${F(m.items[0]).emoji}</span>${lang==="zh"?m.zh:m.en}</button>`).join("");
+  const venueTabs = VENUES.map(v =>
+    `<button class="tab ${v.id===curVenue?"on":""}" onclick="setVenue('${v.id}')">${v.emoji} ${lang==="zh"?v.zh:v.en}</button>`).join("");
+  const mains = FOODS.filter(f => (f.role==="main"||f.role==="both") && f.venues.includes(curVenue))
+    .map(f => `<button class="chip" onclick="addFood('${f.id}',this)"><span class="e">${f.emoji}</span>${nm(f)}</button>`).join("");
+  return `
+    <div class="card"><h2>${t("startPreset")}</h2><div class="chipgrid">${presets}</div></div>
+    <div class="card"><h2>${t("startBuild")}</h2>
+      <div class="tabs">${venueTabs}</div>
+      <div class="chipgrid">${mains}</div></div>
+    <button class="bigbtn ghost" onclick="openBrowse()">${t("browseAll")}</button>`;
+}
+
+let curVenue = VENUES[0].id;
+function setVenue(v){ curVenue = v; render(); }
+
+function pickPreset(id){
+  const m = MEALS.find(x=>x.id===id);
+  meal = [...m.items];
+  render();
+  popBubbleForMain(F(m.items[0]));
+}
+
+/* venues represented in the current meal (for filtering suggestions) */
+function mealVenues(){
+  const set = new Set();
+  meal.forEach(id => F(id).venues.forEach(v=>set.add(v)));
+  return set;
+}
+
+function suggestions(){
+  const vset = mealVenues();
+  const inMeal = new Set(meal);
+  const out = [];
+  /* 1. explicit pairings for each item in the meal */
+  meal.forEach(id => (PAIRINGS[id]||[]).forEach(aid => {
+    if(!inMeal.has(aid) && !out.includes(aid)) out.push(aid);
+  }));
+  /* 2. fallback: addons that share a venue with the meal */
+  FOODS.forEach(f => {
+    if((f.role==="addon"||f.role==="both") && !inMeal.has(f.id) && !out.includes(f.id)
+       && f.venues.some(v=>vset.has(v))) out.push(f.id);
+  });
+  return out;
+}
+
+function pairingHTML(){
+  const sugg = suggestions();
+  const top  = sugg.slice(0,4);
+  const rest = sugg.slice(4);
+  const chip = id => { const f=F(id);
+    return `<button class="chip small" onclick="addFood('${id}',this)"><span class="e">${f.emoji}</span>${nm(f)}</button>`; };
+  return `
+    <div class="card">
+      <div class="suggesthead">${t("suggest")}</div>
+      <div class="chipgrid">${top.map(chip).join("")}</div>
+      ${rest.length ? `<button class="bigbtn ghost" onclick="toggleMore()">${showMore?t("less"):t("more")}</button>
+        ${showMore?`<div class="chipgrid" style="margin-top:8px">${rest.map(chip).join("")}</div>`:""}` : ""}
+      <button class="bigbtn ghost" onclick="openBrowse()">${t("browseAll")}</button>
+    </div>
+    <button class="bigbtn" onclick="finishMeal()">${t("done")}</button>`;
+}
+
+/* ---------- how-to-use pop-up ---------- */
+function openHelp(){
+  const ov=document.getElementById("helpOv");
+  document.getElementById("helpSheet").innerHTML=`
+    <h2>❓ ${t("helpTitle")} <button class="xbtn" onclick="closeHelp()">✕</button></h2>
+    <ul class="helpsteps">${t("helpSteps").map(s=>`<li>${s}</li>`).join("")}</ul>
+    <button class="bigbtn" onclick="closeHelp()">${t("gotIt")}</button>`;
+  ov.classList.add("on");
+}
+function closeHelp(){
+  document.getElementById("helpOv").classList.remove("on");
+  try{ localStorage.setItem("hpa_pairit_help_v1","seen"); }catch(e){}
+}
+
+/* ---------- browse-all-foods sheet ---------- */
+function openBrowse(){
+  document.getElementById("browSheet").innerHTML=`
+    <h2>${t("browseAll")} <button class="xbtn" onclick="closeBrowse()">✕</button></h2>
+    <input class="searchbox" id="browSearch" type="text" placeholder="${t("searchPh")}" oninput="renderBrowseList()">
+    <div class="browlist" id="browList"></div>`;
+  document.getElementById("browOv").classList.add("on");
+  renderBrowseList();
+}
+function closeBrowse(){ document.getElementById("browOv").classList.remove("on"); }
+function renderBrowseList(){
+  const q=(document.getElementById("browSearch").value||"").toLowerCase().trim();
+  const venueName=id=>{const v=VENUES.find(x=>x.id===id);return v?(lang==="zh"?v.zh:v.en):id;};
+  const list=FOODS
+    .filter(f=>!q || f.zh.toLowerCase().includes(q) || f.en.toLowerCase().includes(q))
+    .sort((a,b)=>nm(a).localeCompare(nm(b), lang==="zh"?"zh-Hant":"en"));
+  document.getElementById("browList").innerHTML=list.map(f=>{
+    const inMeal=meal.includes(f.id);
+    return `<button class="browrow ${inMeal?"in":""}" onclick="browseAdd('${f.id}')">
+      <span>${nm(f)}${f.serving?` <span class="meta">(${f.serving})</span>`:""}</span>
+      <span class="meta">${inMeal?t("added"):f.venues.map(venueName).join("·")}</span></button>`;
+  }).join("");
+}
+function browseAdd(id){
+  if(meal.includes(id)) return;
+  closeBrowse();
+  addFood(id);
+  window.scrollTo(0,0);
+}
+
+function toggleMore(){ showMore=!showMore; render(); }
+
+/* ---------- tray + totals ---------- */
+function totals(){
+  const s={protein:0,fiber:0,sodium:0,calcium:0,wg:0};
+  meal.forEach(id=>{const n=F(id).nutrition;
+    s.protein+=n.protein; s.fiber+=n.fiber; s.sodium+=n.sodium; s.calcium+=n.calcium;
+    if(F(id).wholeGrain) s.wg++;});
+  return s;
+}
+function renderTray(){
+  const card=document.getElementById("trayCard");
+  if(meal.length===0 && !finished){card.style.display="none";return;}
+  card.style.display="block";
+  document.getElementById("trayTitle").textContent="🍽️ "+t("myMeal");
+  document.getElementById("trayItems").innerHTML = meal.length
+    ? meal.map(id=>{const f=F(id);
+        return `<span class="titem">${f.emoji} ${nm(f)}${finished?"":`<button aria-label="remove" onclick="removeFood('${id}')">✕</button>`}</span>`;}).join("")
+    : `<span class="empty">${t("empty")}</span>`;
+  const s=totals();
+  document.getElementById("totals").innerHTML = `
+    <div class="tot"><b class="num">${round1(s.protein)}g</b><span>${t("protein")}</span></div>
+    <div class="tot"><b class="num">${round1(s.fiber)}g</b><span>${t("fiber")}</span></div>
+    <div class="tot"><b class="num">${Math.round(s.sodium)}mg</b><span>${t("sodium")}</span></div>
+    <div class="tot"><b class="num">${Math.round(s.calcium)}mg</b><span>${t("calcium")}</span></div>`;
+  document.getElementById("wgBadge").textContent = s.wg>0 ? t("wgCount")+s.wg : "";
+  document.getElementById("sodiumNote").innerHTML =
+    s.sodium >= 1500 ? `<div class="note">${t("sodiumHigh")}</div>` : "";  /* ✏️ EDIT HERE: 1500 = mg of sodium that triggers the gentle note */
+}
+function round1(x){return Math.round(x*10)/10;}
+
+/* ---------- adding / removing foods + bubbles ---------- */
+function addFood(id, btn){
+  if(meal.includes(id)) return;
+  meal.push(id); showMore=false; render();
+  popBubble(bubbleFor(F(id)), F(id).nutrition.sodium >= BUBBLE_RULES.sodiumWatch);
+}
+function removeFood(id){ meal = meal.filter(x=>x!==id); if(meal.length===0) finished=false; render(); }
+
+/* Decide what the sticker bubble says for a newly added food.
+   Priority: custom msg → whole grain → protein → fiber → calcium → generic */
+function bubbleFor(f){
+  if(f.msg) return lang==="zh"?f.msg.zh:f.msg.en;
+  const n=f.nutrition, R=BUBBLE_RULES;
+  if(f.wholeGrain)        return t("addedWG");
+  if(n.protein>=R.protein) return lang==="zh"?`+${round1(n.protein)}g 蛋白質！💪`:`+${round1(n.protein)}g protein! 💪`;
+  if(n.fiber>=R.fiber)     return lang==="zh"?`+${round1(n.fiber)}g 膳食纖維！🥬`:`+${round1(n.fiber)}g fiber! 🥬`;
+  if(n.calcium>=R.calcium) return lang==="zh"?`+${Math.round(n.calcium)}mg 鈣質！🦴`:`+${Math.round(n.calcium)}mg calcium! 🦴`;
+  return t("addedGeneric");
+}
+function popBubbleForMain(f){
+  if(f.nutrition.sodium >= BUBBLE_RULES.sodiumWatch) popBubble(t("watchNa"), true);
+}
+let bubbleTimer=null;
+function popBubble(text, watch){
+  const zone=document.getElementById("bubbleZone");
+  zone.innerHTML=`<div class="bubble ${watch&&text===t("watchNa")?"watch":""}">${text}</div>`;
+  const b=zone.firstChild;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>b.classList.add("on")));
+  clearTimeout(bubbleTimer);
+  bubbleTimer=setTimeout(()=>{ b.classList.remove("on"); }, 2200);
+  /* if the added food is ALSO salty, show the gentle note right after */
+  if(watch && text!==t("watchNa")){
+    setTimeout(()=>{ if(document.getElementById("bubbleZone").firstChild)
+      popBubble(t("watchNa"), true); }, 2400);
+  }
+}
+
+/* ---------- finishing + sharing ---------- */
+function finishMeal(){
+  finished=true; render();
+  if(window.Buddy) Buddy.addCoins("pairing");
+}
+function summaryHTML(){
+  const addons = meal.filter(id=>{const f=F(id);return f.role==="addon"||f.role==="both";});
+  const list = addons.length
+    ? `<p>${t("sumBody")}</p><p style="font-size:26px">${addons.map(id=>F(id).emoji).join(" ")}</p>`
+    : `<p>${t("sumNothing")}</p>`;
+  return `<div class="card summary">
+    <div class="face">🎉</div><h2 style="justify-content:center">${t("sumTitle")}</h2>${list}
+    <button class="bigbtn alt" onclick="shareApp()">${t("share")}</button>
+    <button class="bigbtn ghost" onclick="restart()">${t("restart")}</button>
+  </div>`;
+}
+function restart(){ meal=[]; finished=false; showMore=false; render(); window.scrollTo(0,0); }
+
+async function shareApp(){
+  const text = t("shareText") + " " + location.href;
+  try{
+    if(navigator.share){ await navigator.share({text}); }
+    else { await navigator.clipboard.writeText(text); alert(t("copied")); }
+    if(window.Buddy) Buddy.addCoins("share");
+  }catch(e){ /* user cancelled the share sheet — no coins, no error */ }
+}
+
+render();
+
+/* overlays close when tapping the dark background */
+["helpOv","browOv"].forEach(id=>{
+  const ov=document.getElementById(id);
+  ov.addEventListener("click",e=>{ if(e.target===ov) ov.classList.remove("on"); });
+});
+/* show the how-to pop-up automatically on the first visit only */
+try{ if(!localStorage.getItem("hpa_pairit_help_v1")) openHelp(); }catch(e){}
+</script>
+</body>
+</html>

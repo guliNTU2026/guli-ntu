@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ✏️ EDIT HERE: browser-tab title -->
+<title>穀力健康外食</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+/* Same color system as the two apps */
+:root{
+  --paper:#FAF5EA; --ink:#3A3029; --tea:#247A5A;
+  --indigo:#1E6B4E; --yolk:#F3B72B; --card:#FFFFFF;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'Noto Sans TC',-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;
+  font-size:16px;line-height:1.5;min-height:100vh}
+.wrap{max-width:480px;margin:0 auto;padding:22px 16px 120px}
+
+header{display:flex;justify-content:flex-end;margin-bottom:6px}
+.langbtn{border:2.5px solid var(--ink);background:var(--card);border-radius:12px;padding:6px 12px;
+  font-weight:800;cursor:pointer;box-shadow:2px 2px 0 var(--ink);font-family:inherit;font-size:14px}
+.langbtn:active{transform:translate(2px,2px);box-shadow:none}
+
+.hero{text-align:center;margin:6px 0 22px}
+.hero .mark{font-size:52px;line-height:1}
+h1{font-size:28px;font-weight:900;margin:10px 0 4px}
+.tagline{font-size:15px;opacity:.8;margin:0 8px}
+
+/* app choice cards */
+.choice{display:block;text-decoration:none;color:var(--ink);background:var(--card);
+  border:2.5px solid var(--ink);border-radius:20px;box-shadow:4px 4px 0 var(--ink);
+  padding:18px;margin-bottom:16px;transition:transform .08s}
+.choice:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.choice .row{display:flex;align-items:center;gap:14px}
+.choice .emoji{font-size:44px;line-height:1;flex-shrink:0}
+.choice .txt h2{margin:0;font-size:21px;font-weight:900}
+.choice .txt p{margin:3px 0 0;font-size:14px;opacity:.8;line-height:1.45}
+.choice.pair{border-color:var(--tea)}
+.choice.pair .txt h2{color:var(--tea)}
+.choice.show{border-color:var(--indigo)}
+.choice.show .txt h2{color:var(--indigo)}
+.badge{display:inline-block;font-size:12px;font-weight:800;background:var(--yolk);color:var(--ink);
+  border:2px solid var(--ink);border-radius:8px;padding:2px 8px;margin-top:8px}
+
+.footlinks{text-align:center;margin-top:8px}
+.footlinks a{display:inline-block;color:var(--ink);font-weight:700;font-size:14px;text-decoration:none;
+  border-bottom:2px solid var(--yolk);padding:2px 2px;margin:6px 10px}
+
+footer{font-size:11.5px;opacity:.55;text-align:center;margin-top:26px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <button class="langbtn" id="langBtn" onclick="toggleLang()">EN</button>
+  </header>
+
+  <div class="hero">
+    <div class="mark">🌾</div>
+    <h1 id="title"></h1>
+    <p class="tagline" id="tagline"></p>
+  </div>
+
+  <!-- ✏️ EDIT HERE (via the JS text block below): the two app descriptions -->
+  <a class="choice pair" href="pair-it.html">
+    <div class="row">
+      <div class="emoji">🍱</div>
+      <div class="txt">
+        <h2 id="pairName"></h2>
+        <p id="pairDesc"></p>
+      </div>
+    </div>
+    <span class="badge" id="pairBadge"></span>
+  </a>
+
+  <a class="choice show" href="showdown.html">
+    <div class="row">
+      <div class="emoji">🥊</div>
+      <div class="txt">
+        <h2 id="showName"></h2>
+        <p id="showDesc"></p>
+      </div>
+    </div>
+    <span class="badge" id="showBadge"></span>
+  </a>
+
+  <div class="footlinks">
+    <a href="faq.html" id="faqLink"></a>
+    <!-- ✏️ EDIT HERE: replace # with your cookbook PDF link (or delete this line) -->
+    <a href="#" id="cookbookLink"></a>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<!-- shared pet system so the buddy + coins appear here too -->
+<script src="foods-data.js"></script>
+<script src="pet-shared.js"></script>
+
+<script>
+/* =====================================================================
+   ✏️ EDIT HERE: all landing-page text, both languages.
+   ===================================================================== */
+const UI = {
+  title:    { zh:"穀力健康外食", en:"Eat Well, Eat Out" },
+  tagline:  { zh:"外食也能吃得好！選一個小遊戲開始 👇", en:"Eating out can be balanced! Pick a game to start 👇" },
+  pairName: { zh:"配什麼好？", en:"Pair It" },
+  pairDesc: { zh:"選一個常吃的餐點，看看還能加點什麼讓它更均衡。", en:"Pick a meal you often eat and see what you can add to balance it." },
+  pairBadge:{ zh:"🍚 搭配小工具", en:"🍚 Meal pairing" },
+  showName: { zh:"營養大對決", en:"Nutrition Showdown" },
+  showDesc: { zh:"猜猜哪個食物營養比較高！答對賺金幣。", en:"Guess which food wins on nutrition — earn coins for correct answers!" },
+  showBadge:{ zh:"🎮 問答遊戲", en:"🎮 Quiz game" },
+  faqLink:  { zh:"❓ 常見問題", en:"❓ FAQ" },
+  cookbook: { zh:"📖 食譜書", en:"📖 Cookbook" },
+  foot:     { zh:"國立臺灣大學公共衛生學院 · 衛生福利部國民健康署補助", en:"NTU College of Public Health · Supported by the Health Promotion Administration, MOHW" },
+};
+
+let lang = "zh";
+const t = k => UI[k][lang];
+function toggleLang(){
+  lang = lang === "zh" ? "en" : "zh";
+  document.getElementById("langBtn").textContent = lang === "zh" ? "EN" : "中";
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  if (window.Buddy) Buddy.setLang(lang);
+  render();
+}
+function render(){
+  document.getElementById("title").textContent     = t("title");
+  document.getElementById("tagline").textContent   = t("tagline");
+  document.getElementById("pairName").textContent  = t("pairName");
+  document.getElementById("pairDesc").textContent  = t("pairDesc");
+  document.getElementById("pairBadge").textContent = t("pairBadge");
+  document.getElementById("showName").textContent  = t("showName");
+  document.getElementById("showDesc").textContent  = t("showDesc");
+  document.getElementById("showBadge").textContent = t("showBadge");
+  document.getElementById("faqLink").textContent   = t("faqLink");
+  document.getElementById("cookbookLink").textContent = t("cookbook");
+  document.getElementById("foot").textContent      = t("foot");
+}
+
+/* Carry a QR ?src= tag through to whichever app they tap, so your
+   GoatCounter stats still attribute the visit to the right poster. */
+(function preserveSrc(){
+  const src = new URLSearchParams(location.search).get("src");
+  if(!src) return;
+  document.querySelectorAll("a.choice").forEach(a=>{
+    a.href += (a.href.includes("?") ? "&" : "?") + "src=" + encodeURIComponent(src);
+  });
+})();
+
+render();
+</script>
+</body>
+</html>

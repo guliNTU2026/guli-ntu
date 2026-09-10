@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ✏️ EDIT HERE: the browser-tab title -->
+<title>營養大對決 Nutrition Showdown</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+/* =====================================================
+   ✏️ EDIT HERE: COLORS — same system as pair-it.html.
+   --indigo is this game's main color (Pair It uses green
+   so the two apps feel like siblings, not twins).
+   ===================================================== */
+:root{
+  --paper:#FAF5EA;
+  --ink:#3A3029;
+  --indigo:#1E6B4E;
+  --yolk:#F3B72B;
+  --chili:#ED7848;
+  --card:#FFFFFF;
+  --win:#247A5A;
+  --lime:#A8CB63;
+  --tan:#E4CB93;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'Noto Sans TC',-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;
+  font-size:16px;line-height:1.5}
+.wrap{max-width:480px;margin:0 auto;padding:14px 14px 110px}
+.num{font-family:'Fredoka','Noto Sans TC',sans-serif}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 14px}
+h1{font-size:26px;font-weight:900;margin:0}
+h1 .vs{color:var(--indigo)}
+.langbtn{border:2.5px solid var(--ink);background:var(--card);border-radius:12px;padding:6px 12px;
+  font-weight:800;cursor:pointer;box-shadow:2px 2px 0 var(--ink);font-family:inherit;font-size:14px}
+.langbtn:active{transform:translate(2px,2px);box-shadow:none}
+
+.card{background:var(--card);border:2.5px solid var(--ink);border-radius:18px;
+  box-shadow:3px 3px 0 var(--ink);padding:16px;margin-bottom:14px}
+.bigbtn{display:block;width:100%;border:2.5px solid var(--ink);border-radius:16px;background:var(--indigo);
+  color:#fff;font-weight:900;font-size:18px;padding:14px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);
+  font-family:inherit;margin-top:10px}
+.bigbtn:active{transform:translate(2px,2px);box-shadow:none}
+.bigbtn.alt{background:var(--yolk);color:var(--ink)}
+.bigbtn.ghost{background:var(--card);color:var(--ink);font-weight:700;font-size:14px;padding:9px;box-shadow:2px 2px 0 var(--ink)}
+
+/* ---------- progress ---------- */
+.hud{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:14px;margin-bottom:10px}
+.streak{color:var(--chili)}
+.pbar{height:10px;background:#eee2c8;border:2px solid var(--ink);border-radius:99px;overflow:hidden;margin-bottom:14px}
+.pbar i{display:block;height:100%;background:var(--indigo);transition:width .3s}
+
+/* ---------- question ---------- */
+.qtext{font-size:19px;font-weight:900;text-align:center;margin:4px 0 14px}
+.qtext .nut{color:var(--indigo)}
+.duel{display:grid;grid-template-columns:1fr 1fr;gap:12px;position:relative}
+.duel.four{grid-template-columns:1fr 1fr}
+.opt{border:2.5px solid var(--ink);background:var(--card);border-radius:18px;box-shadow:3px 3px 0 var(--ink);
+  padding:16px 8px;text-align:center;cursor:pointer;font-family:inherit;color:var(--ink);position:relative}
+.opt:active{transform:translate(2px,2px);box-shadow:none}
+.opt .e{font-size:44px;display:block}
+.opt .n{font-weight:800;font-size:15px;margin-top:4px;display:block}
+.opt .val{display:block;margin-top:6px;font-size:15px;font-weight:800;opacity:0;transition:opacity .25s}
+.opt.reveal .val{opacity:1}
+.opt.win{border-color:var(--win);box-shadow:3px 3px 0 var(--win);background:#EAF3D8}
+.opt.lose{opacity:.55}
+.opt.pickedwrong{border-color:var(--chili);box-shadow:3px 3px 0 var(--chili)}
+.vsbadge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-6deg);
+  background:var(--yolk);border:2.5px solid var(--ink);border-radius:12px;box-shadow:2px 2px 0 var(--ink);
+  padding:4px 10px;font-weight:900;font-size:15px;z-index:5;pointer-events:none}
+.verdict{text-align:center;font-weight:900;font-size:20px;margin:12px 0 2px;min-height:26px}
+.verdict.good{color:var(--win)} .verdict.bad{color:var(--chili)}
+.tip{font-size:13.5px;background:var(--paper);border:2px dashed var(--ink);border-radius:12px;padding:8px 10px;margin-top:10px}
+
+/* ---------- results (designed to be screenshot-shareable) ---------- */
+.result{text-align:center;position:relative}
+.result::before{content:"";position:absolute;inset:7px;border:2px dashed var(--ink);border-radius:12px;opacity:.22;pointer-events:none}
+.result .face{font-size:56px}
+.score{font-size:44px;font-weight:900}
+.cardtop{font-size:12px;font-weight:700;letter-spacing:2px;opacity:.55;text-transform:uppercase}
+.foodrow{font-size:24px;letter-spacing:5px;margin:6px 0}
+.tag{font-weight:900;font-size:17px;color:var(--indigo);margin-top:10px}
+.shothint{text-align:center;font-size:13px;opacity:.65;margin:-6px 0 10px}
+footer{font-size:11.5px;opacity:.55;text-align:center;margin-top:20px}
+.howto{font-size:14px}
+.howto li{margin-bottom:4px}
+@media (prefers-reduced-motion:reduce){.pbar i{transition:none}.opt .val{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="appTitle">營養<span class="vs">大對決</span></h1>
+    <button class="langbtn" id="langBtn" onclick="toggleLang()">EN</button>
+  </header>
+  <div id="screen"></div>
+  <footer id="foot"></footer>
+</div>
+
+<script src="foods-data.js"></script>
+<script src="pet-shared.js"></script>
+
+<script>
+/* =====================================================================
+   ✏️ EDIT HERE: all on-screen text, both languages.
+   ===================================================================== */
+const UI = {
+  intro:   { zh:"你每天都在做食物選擇——來猜猜哪個贏！", en:"You make food choices every day — guess which one wins!" },
+  how1:    { zh:"每回合比較兩種常見食物", en:"Each round compares two everyday foods" },
+  how2:    { zh:"答對得金幣 🪙，可以餵養你的校園小夥伴", en:"Correct answers earn coins 🪙 to feed your Campus Buddy" },
+  how3:    { zh:"完全不比熱量——比的是蛋白質、纖維、鈉、鈣！", en:"No calorie questions — it's about protein, fiber, sodium & calcium!" },
+  start:   { zh:"開始對決 🥊", en:"Start the showdown 🥊" },
+  qMore:   { zh:"哪個的<span class='nut'>NUT</span>比較多？", en:"Which has <span class='nut'>more NUT</span>?" },
+  qLess:   { zh:"哪個的<span class='nut'>NUT</span>比較少？", en:"Which has <span class='nut'>less NUT</span>?" },
+  qWG:     { zh:"哪一個屬於<span class='nut'>全穀雜糧類</span>？🌾", en:"Which one is a <span class='nut'>whole grain</span>? 🌾" },
+  right:   { zh:"答對了！", en:"Correct!" },
+  wrong:   { zh:"可惜～", en:"So close!" },
+  next:    { zh:"下一題 ▶", en:"Next ▶" },
+  seeScore:{ zh:"看成績 🏁", en:"See my score 🏁" },
+  score:   { zh:"你的成績", en:"Your score" },
+  again:   { zh:"再來一局 ↺", en:"Play again ↺" },
+  share:   { zh:"📣 分享成績 (+5 🪙)", en:"📣 Share my score (+5 🪙)" },
+  shareTxt:{ zh:"我在「營養大對決」拿到 S/N！你能贏過我嗎？", en:"I scored S/N on Nutrition Showdown! Can you beat me?" },
+  copied:  { zh:"已複製！貼給朋友吧", en:"Copied — send it to a friend!" },
+  toPair:  { zh:"🍱 去「配什麼好？」幫餐點升級", en:"🍱 Try Pair It to upgrade a meal" },
+  wgWhy:   { zh:"全穀雜糧保留了麩皮和胚芽，纖維和維生素更多！", en:"Whole grains keep the bran and germ — more fiber and vitamins!" },
+  /* ✏️ EDIT HERE: end-of-game messages by score band */
+  msgHigh: { zh:"太強了，營養直覺滿分！🏆", en:"Amazing nutrition instincts! 🏆" },
+  msgMid:  { zh:"不錯喔，越比越會選！💪", en:"Nice — you're getting the hang of it! 💪" },
+  msgLow:  { zh:"每一題都是新發現，再挑戰一次！🌱", en:"Every question is a discovery — try again! 🌱" },
+  learned: { zh:"今日學到", en:"Today I learned" },
+  shot:    { zh:"📱 截圖分享到限時動態吧！", en:"📱 Screenshot this for your story!" },
+  foot:    { zh:"國立臺灣大學公共衛生學院 · 衛生福利部國民健康署補助 · 營養資訊僅供參考", en:"NTU College of Public Health · Supported by the Health Promotion Administration, MOHW · Nutrition info is approximate" },
+};
+
+let lang="zh";
+const t=k=>UI[k][lang];
+const nm=f=>lang==="zh"?f.zh:f.en;
+function toggleLang(){
+  lang=lang==="zh"?"en":"zh";
+  document.getElementById("langBtn").textContent=lang==="zh"?"EN":"中";
+  document.documentElement.lang=lang==="zh"?"zh-Hant":"en";
+  if(window.Buddy) Buddy.setLang(lang);
+  render();
+}
+
+/* ===================== quiz generation ===================== */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const pool=()=>FOODS.filter(f=>f.nutrition);
+
+/* Build one comparison question with a clear winner */
+function makeCompareQ(usedPairs){
+  const nuts=GAME_SETTINGS.nutrients;
+  for(let tries=0;tries<200;tries++){
+    const nut=nuts[Math.floor(Math.random()*nuts.length)];
+    const foods=shuffle(pool().slice());
+    const a=foods[0], b=foods[1];
+    const va=a.nutrition[nut.key], vb=b.nutrition[nut.key];
+    const lo=Math.min(va,vb), hi=Math.max(va,vb);
+    const clear = lo===0 ? hi>0 : hi/lo>=GAME_SETTINGS.minRatio;
+    const pairKey=[a.id,b.id].sort().join("|")+nut.key;
+    if(clear && !usedPairs.has(pairKey)){
+      usedPairs.add(pairKey);
+      const winner = nut.higherWins ? (va>vb?a:b) : (va<vb?a:b);
+      return {type:"cmp",nut,a,b,winner:winner.id};
+    }
+  }
+  return null;
+}
+/* Build one "spot the whole grain" question (4 options, 1 correct) */
+function makeWGQ(usedWG){
+  const wg=shuffle(pool().filter(f=>f.wholeGrain&&!usedWG.has(f.id)));
+  if(!wg.length) return null;
+  const answer=wg[0]; usedWG.add(answer.id);
+  const others=shuffle(pool().filter(f=>!f.wholeGrain)).slice(0,3);
+  return {type:"wg",options:shuffle([answer,...others]),winner:answer.id};
+}
+function makeQuiz(){
+  const qs=[]; const usedPairs=new Set(); const usedWG=new Set();
+  for(let i=0;i<GAME_SETTINGS.wholeGrainQuestions;i++){const q=makeWGQ(usedWG); if(q)qs.push(q);}
+  while(qs.length<GAME_SETTINGS.questionsPerGame){const q=makeCompareQ(usedPairs); if(!q)break; qs.push(q);}
+  return shuffle(qs);
+}
+
+/* ===================== game state ===================== */
+let quiz=[], qi=0, scoreN=0, streak=0, answered=false, lastCorrect=null;
+let mode="home"; // "home" | "play" | "end"
+
+function startGame(){ quiz=makeQuiz(); qi=0; scoreN=0; streak=0; answered=false; mode="play"; render(); }
+
+function pick(id){
+  if(answered) return;
+  answered=true;
+  const q=quiz[qi];
+  lastCorrect = id===q.winner;
+  if(lastCorrect){ scoreN++; streak++; if(window.Buddy) Buddy.addCoins("answer"); }
+  else streak=0;
+  render(id);
+}
+function next(){
+  answered=false; lastCorrect=null;
+  if(qi<quiz.length-1){ qi++; render(); }
+  else { mode="end"; render(); }
+  window.scrollTo(0,0);
+}
+
+/* ===================== rendering ===================== */
+function render(pickedId){
+  document.getElementById("foot").innerHTML=t("foot") + ' · <a href="faq.html">FAQ</a>';
+  const s=document.getElementById("screen");
+  if(mode==="home") s.innerHTML=homeHTML();
+  else if(mode==="play") s.innerHTML=playHTML(pickedId);
+  else s.innerHTML=endHTML();
+}
+
+function homeHTML(){
+  return `<div class="card">
+      <p style="font-weight:800;font-size:17px;margin-top:0">${t("intro")}</p>
+      <ul class="howto"><li>${t("how1")}</li><li>${t("how2")}</li><li>${t("how3")}</li></ul>
+      <button class="bigbtn" onclick="startGame()">${t("start")}</button>
+    </div>
+    <button class="bigbtn ghost" onclick="location.href='pair-it.html'">${t("toPair")}</button>`;
+}
+
+function valStr(f,nut){ return `${f.nutrition[nut.key]}${nut.unit}`; }
+
+function playHTML(pickedId){
+  const q=quiz[qi];
+  const hud=`<div class="hud"><span class="num">Q ${qi+1} / ${quiz.length}</span>
+      <span class="streak">${streak>=2?"🔥×"+streak:""}</span>
+      <span class="num">✅ ${scoreN}</span></div>
+    <div class="pbar"><i style="width:${((qi+(answered?1:0))/quiz.length)*100}%"></i></div>`;
+
+  let body="";
+  if(q.type==="cmp"){
+    const nutName = lang==="zh"?q.nut.zh:q.nut.en;
+    const qtxt=(q.nut.higherWins?t("qMore"):t("qLess")).replace("NUT",nutName);
+    const opt=f=>{
+      let cls="opt";
+      if(answered){
+        cls+=" reveal"+(f.id===q.winner?" win":" lose");
+        if(pickedId===f.id&&f.id!==q.winner) cls=cls.replace(" lose","")+" pickedwrong";
+      }
+      return `<button class="${cls}" onclick="pick('${f.id}')">
+        <span class="e">${f.emoji}</span><span class="n">${nm(f)}</span>
+        <span class="val num">${valStr(f,q.nut)}</span></button>`;
+    };
+    body=`<div class="qtext">${qtxt}</div>
+      <div class="duel">${opt(q.a)}${opt(q.b)}<div class="vsbadge">VS</div></div>`;
+  }else{
+    const opt=f=>{
+      let cls="opt";
+      if(answered){
+        cls+=" reveal"+(f.id===q.winner?" win":" lose");
+        if(pickedId===f.id&&f.id!==q.winner) cls=cls.replace(" lose","")+" pickedwrong";
+      }
+      return `<button class="${cls}" onclick="pick('${f.id}')">
+        <span class="e">${f.emoji}</span><span class="n">${nm(f)}</span>
+        <span class="val">${f.id===q.winner?"🌾":""}</span></button>`;
+    };
+    body=`<div class="qtext">${t("qWG")}</div>
+      <div class="duel four">${q.options.map(opt).join("")}</div>`;
+  }
+
+  let after="";
+  if(answered){
+    const winnerFood = q.type==="cmp" ? (q.winner===q.a.id?q.a:q.b) : q.options.find(f=>f.id===q.winner);
+    const tip = q.type==="wg"
+      ? t("wgWhy")
+      : (winnerFood.tip ? (lang==="zh"?winnerFood.tip.zh:winnerFood.tip.en)
+        : ((q.a.tip&&(lang==="zh"?q.a.tip.zh:q.a.tip.en)) || (q.b.tip&&(lang==="zh"?q.b.tip.zh:q.b.tip.en)) || ""));
+    after=`<div class="verdict ${lastCorrect?"good":"bad"}">${lastCorrect?t("right")+" 🪙+2":t("wrong")}</div>
+      ${tip?`<div class="tip">💡 ${tip}</div>`:""}
+      <button class="bigbtn" onclick="next()">${qi<quiz.length-1?t("next"):t("seeScore")}</button>`;
+  }
+  return `<div class="card">${hud}${body}${after}</div>`;
+}
+
+function endHTML(){
+  const n=quiz.length;
+  /* ✏️ EDIT HERE: score bands for the end message (share of correct answers) */
+  const msg = scoreN>=n*0.75 ? t("msgHigh") : scoreN>=n*0.5 ? t("msgMid") : t("msgLow");
+  const face= scoreN>=n*0.75 ? "🏆" : scoreN>=n*0.5 ? "💪" : "🌱";
+  /* a random fact from the foods that appeared in this game */
+  const played=[]; quiz.forEach(q=>{ (q.type==="cmp"?[q.a,q.b]:q.options).forEach(f=>{ if(!played.includes(f)) played.push(f); }); });
+  const tipped=played.filter(f=>f.tip);
+  const learned = tipped.length ? (lang==="zh"?tipped[Math.floor(Math.random()*tipped.length)].tip.zh:tipped[Math.floor(Math.random()*tipped.length)].tip.en) : t("wgWhy");
+  const foodrow = played.slice(0,8).map(f=>f.emoji).join(" ");
+  const tag = (typeof SHARE!=="undefined") ? SHARE.hashtag : "";
+  const date = new Date().toLocaleDateString(lang==="zh"?"zh-TW":"en-US");
+  return `<div class="card result">
+      <div class="cardtop">${lang==="zh"?"營養大對決":"Nutrition Showdown"} · ${date}</div>
+      <div class="face">${face}</div>
+      <p style="margin:4px 0 0;font-weight:800">${t("score")}</p>
+      <div class="score num">${scoreN} / ${n}</div>
+      <div class="foodrow">${foodrow}</div>
+      <p style="margin:4px 0 8px">${msg}</p>
+      <div class="tip" style="text-align:left">💡 <b>${t("learned")}</b>：${learned}</div>
+      <div class="tag">${tag}</div>
+    </div>
+    <p class="shothint">${t("shot")}</p>
+    <button class="bigbtn alt" onclick="shareScore()">${t("share")}</button>
+    <button class="bigbtn" onclick="startGame()">${t("again")}</button>
+    <button class="bigbtn ghost" onclick="location.href='pair-it.html'">${t("toPair")}</button>`;
+}
+
+async function shareScore(){
+  const text=t("shareTxt").replace("S",scoreN).replace("N",quiz.length)+" "+location.href;
+  try{
+    if(navigator.share){ await navigator.share({text}); }
+    else{ await navigator.clipboard.writeText(text); alert(t("copied")); }
+    if(window.Buddy) Buddy.addCoins("share");
+  }catch(e){}
+}
+
+render();
+</script>
+</body>
+</html>
