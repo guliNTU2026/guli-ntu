@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sprite Lab — 貓咪動作對照工作台</title>
+<!--
+  =====================================================================
+  sprite-lab.html — A WORKBENCH, NOT PART OF THE WEBSITE
+  =====================================================================
+  This page is a tool for YOU, the person maintaining the site. Visitors
+  never see it. It is safe to leave in the folder; it is also safe to
+  delete once cat-frames.js is filled in.
+
+  It does two jobs:
+
+  JOB 1 — prove the core trick works.
+    The whole cat system rests on one idea: show a 32x32 "window" onto
+    one big picture, and slide the window to change what is shown. The
+    big square below is exactly that, and nothing else.
+
+  JOB 2 — fill in cat-frames.js without counting rows by hand.
+    Load the cat PNG, press play on a row, watch what the cat does,
+    type a nickname, press Copy. Paste the line into cat-frames.js.
+
+  IMPORTANT: your PNG is read straight off your own computer by your own
+  browser. It is not uploaded anywhere, not to this site and not to any
+  AI. Nothing leaves your machine.
+  =====================================================================
+-->
+<style>
+  /* Colours borrowed from the main site so this feels like the same project */
+  :root{ --paper:#FAF5EA; --ink:#3A3029; --yolk:#F3B72B; --card:#fff; --green:#247A5A; --orange:#ED7848; }
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px;background:var(--paper);color:var(--ink);
+    font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;line-height:1.55}
+  .wrap{max-width:860px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:17px;margin:26px 0 8px;padding-top:14px;border-top:2px dashed rgba(58,48,41,.25)}
+  .lede{font-size:14px;opacity:.8;margin:0 0 18px}
+  .card{background:var(--card);border:2.5px solid var(--ink);border-radius:16px;
+    box-shadow:3px 3px 0 var(--ink);padding:14px;margin:10px 0}
+  button{font-family:inherit;font-weight:800;font-size:15px;color:var(--ink);
+    background:var(--yolk);border:2.5px solid var(--ink);border-radius:12px;
+    box-shadow:3px 3px 0 var(--ink);padding:8px 14px;cursor:pointer}
+  button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  button.ghost{background:var(--card);font-size:14px;padding:6px 11px;box-shadow:2px 2px 0 var(--ink)}
+  input[type=number],input[type=text]{font-family:inherit;font-size:15px;padding:6px 8px;
+    border:2px solid var(--ink);border-radius:8px;background:var(--card);color:var(--ink);width:80px}
+  input[type=text]{width:170px}
+  label{font-weight:700;font-size:14px}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .muted{opacity:.7;font-size:13px}
+  code{background:rgba(58,48,41,.08);padding:1px 5px;border-radius:5px;font-size:13px}
+
+  /* ---- THE STAGE: this single div is the whole sprite trick ---- */
+  #stage{
+    image-rendering:pixelated;              /* keep pixel art crisp, not blurry */
+    image-rendering:-moz-crisp-edges;
+    image-rendering:crisp-edges;
+    -ms-interpolation-mode:nearest-neighbor;
+    background-repeat:no-repeat;            /* show ONE frame, never tile */
+    border:2px solid rgba(58,48,41,.3);
+    border-radius:10px;
+    background-color:#EFE6D2;               /* stand-in for the room floor */
+  }
+  .stagewrap{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+
+  /* ---- contact sheet: every row of the sheet, drawn small ---- */
+  .sheetrow{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:8px;cursor:pointer}
+  .sheetrow:hover{background:rgba(243,183,43,.25)}
+  .sheetrow.on{background:var(--yolk);outline:2px solid var(--ink)}
+  .sheetrow .rn{width:64px;flex:none;font-size:12px;font-weight:800}
+  .sheetrow .cnt{width:74px;flex:none;font-size:11.5px;opacity:.75}
+  .cell{width:32px;height:32px;flex:none;image-rendering:pixelated;
+    image-rendering:crisp-edges;background-repeat:no-repeat}
+  .cell.empty{opacity:.15}
+  /* On a narrow phone screen 11 frames do not fit side by side, so the
+     strip scrolls sideways rather than hiding the later frames. */
+  .strip{display:flex;gap:1px;overflow-x:auto;overflow-y:hidden;padding-bottom:2px}
+  @media (max-width:520px){
+    .sheetrow .rn{width:52px;font-size:11.5px}
+    .sheetrow .cnt{width:58px;font-size:10.5px}
+  }
+  .banned{background:repeating-linear-gradient(45deg,rgba(237,120,72,.18) 0 8px,transparent 8px 16px)}
+  #sheetList{max-height:420px;overflow:auto;border:2px solid var(--ink);border-radius:12px;
+    background:var(--card);padding:6px}
+  .out{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;
+    background:#2C241D;color:#F7E9C9;padding:10px 12px;border-radius:10px;
+    overflow-x:auto;white-space:pre;margin:8px 0 0}
+  .ok{color:var(--green);font-weight:800}
+  .bad{color:var(--orange);font-weight:800}
+  .step{background:var(--yolk);display:inline-block;border:2px solid var(--ink);border-radius:999px;
+    width:23px;height:23px;text-align:center;line-height:20px;font-weight:900;font-size:13px;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>🐈 Sprite Lab · 貓咪動作對照工作台</h1>
+<p class="lede">
+  A workbench for filling in <code>cat-frames.js</code>. Your PNG is read by your own
+  browser and never leaves your computer.<br>
+  這是給維護者用的工具頁，訪客看不到。圖片只在你自己的瀏覽器裡開啟，不會上傳。
+</p>
+
+<!-- ================= STEP 1: load a sheet ================= -->
+<h2><span class="step">1</span>Load a cat sheet · 載入貓咪圖檔</h2>
+<div class="card">
+  <div class="row">
+    <input type="file" id="file" accept="image/png,image/*">
+    <button class="ghost" id="tryFolder">or try sprites/ folder</button>
+  </div>
+  <p class="muted" style="margin:10px 0 0">
+    Pick any of the four cat PNGs (they all share the identical layout, so
+    inventorying ONE of them covers all four colours).<br>
+    四隻貓的排版完全相同，所以只需要對照其中一張。
+  </p>
+  <div id="measure" class="muted" style="margin-top:10px"></div>
+</div>
+
+<!-- ================= STEP 2: the single-frame window ================= -->
+<h2><span class="step">2</span>One frame at a time · 單張畫格</h2>
+<div class="card">
+  <div class="stagewrap">
+    <div id="stage" style="width:192px;height:192px"></div>
+    <div style="flex:1;min-width:230px">
+      <div class="row" style="margin-bottom:8px">
+        <label>Row 列 <input type="number" id="row" value="0" min="0"></label>
+        <label>Col 行 <input type="number" id="col" value="0" min="0"></label>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <label>Zoom <input type="number" id="zoom" value="6" min="1" max="14"></label>
+        <label>Speed fps <input type="number" id="fps" value="7" min="1" max="24"></label>
+        <label>Frames <input type="number" id="count" value="1" min="1"></label>
+      </div>
+      <div class="row">
+        <button id="play">▶ Play row 播放</button>
+        <button class="ghost" id="stop">■ Stop</button>
+      </div>
+      <p class="muted" style="margin:10px 0 0">
+        <b>What you are looking at:</b> the square on the left is a single
+        <code>&lt;div&gt;</code>. It is 32&times;32 pixels of the big picture, blown up.
+        Changing Row/Col just slides the big picture behind that window — the
+        image file is never cut. This is exactly how the cat will be drawn on
+        the real site.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= STEP 3: browse all rows ================= -->
+<h2><span class="step">3</span>Find your animations · 找出各個動作</h2>
+<div class="card">
+  <p class="muted" style="margin:0 0 8px">
+    Every row of the sheet is listed below. <b>Click a row</b> to load it above,
+    then press Play and watch what the cat does. The “frames” number is counted
+    automatically by looking for blank squares — it is usually right, but trust
+    your eyes over it.<br>
+    點一列 → 上面按播放 → 看貓在做什麼。「frames」是自動數出來的。
+  </p>
+  <div id="sheetList"><p class="muted" style="padding:8px">Load a sheet first ↑</p></div>
+  <p class="muted" style="margin:10px 0 0">
+    🚫 Rows shaded orange are the <b>hiss</b> and <b>sad</b> animations. This project
+    deliberately does not use them — the pet never guilt-trips anyone. Please
+    leave them alone.
+  </p>
+</div>
+
+<!-- ================= STEP 4: copy the line ================= -->
+<h2><span class="step">4</span>Copy the line into cat-frames.js · 複製貼上</h2>
+<div class="card">
+  <div class="row">
+    <label>Nickname 名稱 <input type="text" id="name" value="wash-sit"></label>
+    <label>Plays 播放方式
+      <select id="loop" style="font-family:inherit;font-size:15px;padding:6px;border:2px solid var(--ink);border-radius:8px;background:var(--card);color:var(--ink)">
+        <option value="loop">loop — over and over</option>
+        <option value="loop-slow">loop-slow — gently</option>
+        <option value="once">once — then holds</option>
+        <option value="single-still">single-still — one pose</option>
+      </select>
+    </label>
+    <button id="copy">📋 Copy</button>
+  </div>
+  <div class="out" id="line">Load a sheet and pick a row.</div>
+  <p class="muted" style="margin:10px 0 0">
+    Open <code>cat-frames.js</code>, find the line with the same nickname, and
+    replace it with this one. The four nicknames already in that file
+    (<code>eat-front</code>, <code>sleep-lay-front-l</code>, <code>itch-r</code>,
+    <code>wash-sit</code>) must keep their exact spelling — other files ask for
+    them by name.
+  </p>
+</div>
+
+<p class="muted" style="margin:26px 0 40px">
+  Done? Save <code>cat-frames.js</code>, then reload this page and spot-check a
+  couple of rows to be sure. Nothing here changes the live site — the live site
+  only reads <code>cat-frames.js</code>.
+</p>
+
+</div>
+
+<script>
+/* =====================================================================
+   All the code for this workbench. Heavily commented on purpose.
+   ===================================================================== */
+
+/* The sheet's shape. Kept in one place so it is easy to change later. */
+var FRAME = 32;     // each little photo is 32 x 32 pixels
+var COLS  = 11;     // photos across  (352 / 32)
+var ROWS  = 53;     // photos down    (1696 / 32)
+
+/* Rows the project has decided not to use. Shown but shaded. */
+var BANNED_ROWS = [41, 42, 43];   // hiss, hiss, sad-idle
+
+/* Handy shortcut so we type less. document.getElementById is a mouthful. */
+function el(id){ return document.getElementById(id); }
+
+/* Everything we currently know about the loaded picture. */
+var sheet = {
+  url: null,        // web address of the picture (a blob: or a file path)
+  w: 0, h: 0,       // its size in pixels
+  counts: null      // counts[row] = how many non-blank photos that row has
+};
+
+/* ---------------------------------------------------------------------
+   LOADING A PICTURE
+   Two ways in: the file picker (stays on your computer) or the sprites/
+   folder (only works once you have actually put the PNGs there).
+   --------------------------------------------------------------------- */
+el('file').addEventListener('change', function(e){
+  var f = e.target.files[0];
+  if (!f) return;
+  /* createObjectURL makes a temporary private address for a file that is
+     sitting on your own disk. Nothing is uploaded. */
+  loadSheet(URL.createObjectURL(f), f.name);
+});
+
+el('tryFolder').addEventListener('click', function(){
+  var guess = prompt(
+    'Filename inside the sprites/ folder:',
+    'cat 1 16x16 animation.png'
+  );
+  if (guess) loadSheet('sprites/' + encodeURIComponent(guess), guess);
+});
+
+function loadSheet(url, label){
+  var img = new Image();
+  img.onload = function(){
+    sheet.url = url; sheet.w = img.naturalWidth; sheet.h = img.naturalHeight;
+
+    /* THE ONE CHECK THAT PREVENTS MOST BUGS:
+       width divided by 32 must be a whole number. If it is not, the
+       artist left gaps between the photos and every frame after the
+       first would be drawn slightly off. */
+    var cx = sheet.w / FRAME, cy = sheet.h / FRAME;
+    var tidy = (cx % 1 === 0) && (cy % 1 === 0);
+    if (tidy) { COLS = cx; ROWS = cy; }
+
+    el('measure').innerHTML =
+      '<b>' + label + '</b><br>' +
+      sheet.w + ' &times; ' + sheet.h + ' px &nbsp;→&nbsp; ' +
+      cx + ' columns &times; ' + cy + ' rows of ' + FRAME + '&times;' + FRAME +
+      '<br>' + (tidy
+        ? '<span class="ok">✓ Divides evenly — no gaps between frames. Good.</span>'
+        : '<span class="bad">✕ Does NOT divide evenly by 32. There is spacing ' +
+          'between frames, or this is not a 32px sheet. Stop and check the ' +
+          'file before going further.</span>');
+
+    countFrames(img);   // work out how many photos each row really uses
+    buildList();        // draw the row-by-row browser
+    draw();             // show the first frame
+  };
+  img.onerror = function(){
+    el('measure').innerHTML = '<span class="bad">Could not open that file. ' +
+      'If you used the sprites/ button, check the filename is spelled ' +
+      'exactly right, including capital letters and ".png".</span>';
+  };
+  img.src = url;
+}
+
+/* ---------------------------------------------------------------------
+   COUNTING THE PHOTOS IN EACH ROW, AUTOMATICALLY
+   Not every row uses all 11 columns — most stop after 4 or 6 and leave
+   the rest blank. Rather than make you count, we copy the picture onto
+   a hidden canvas and check each 32x32 square for any non-transparent
+   pixel. Blank square = the animation ended there.
+   --------------------------------------------------------------------- */
+function countFrames(img){
+  sheet.counts = null;
+  try {
+    var cv = document.createElement('canvas');
+    cv.width = sheet.w; cv.height = sheet.h;
+    var ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+
+    var counts = [];
+    for (var r = 0; r < ROWS; r++){
+      var used = 0;
+      for (var c = 0; c < COLS; c++){
+        var data = ctx.getImageData(c*FRAME, r*FRAME, FRAME, FRAME).data;
+        var hasPixel = false;
+        /* step 4 at a time because pixels come as red,green,blue,alpha.
+           We only care about alpha (the 4th), i.e. "is anything drawn here" */
+        for (var i = 3; i < data.length; i += 4){
+          if (data[i] > 8) { hasPixel = true; break; }
+        }
+        if (!hasPixel) break;   // first blank square ends the animation
+        used++;
+      }
+      counts.push(used);
+    }
+    sheet.counts = counts;
+  } catch (err){
+    /* Some browsers refuse to let a page read pixels from a picture
+       opened straight off the disk (a security rule). Not a problem —
+       you just count the frames with your eyes instead. */
+    sheet.counts = null;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   THE ROW BROWSER
+   One line per row of the sheet, each showing its frames in miniature.
+   --------------------------------------------------------------------- */
+function buildList(){
+  var box = el('sheetList');
+  box.innerHTML = '';
+  for (var r = 0; r < ROWS; r++){
+    var used = sheet.counts ? sheet.counts[r] : null;
+    var line = document.createElement('div');
+    line.className = 'sheetrow' + (BANNED_ROWS.indexOf(r) >= 0 ? ' banned' : '');
+    line.dataset.row = r;
+
+    var strip = '';
+    for (var c = 0; c < COLS; c++){
+      var blank = (used !== null && c >= used);
+      strip += '<div class="cell' + (blank ? ' empty' : '') + '" style="' +
+               cellStyle(r, c, 1) + '"></div>';
+    }
+    line.innerHTML =
+      '<div class="rn">row ' + r + '</div>' +
+      '<div class="cnt">' + (used === null ? '— frames' :
+        used + ' frame' + (used === 1 ? '' : 's')) + '</div>' +
+      '<div class="strip">' + strip + '</div>';
+
+    line.addEventListener('click', function(){
+      var rr = parseInt(this.dataset.row, 10);
+      el('row').value = rr;
+      el('col').value = 0;
+      if (sheet.counts) el('count').value = Math.max(1, sheet.counts[rr]);
+      markSelected(rr);
+      draw();
+      if (parseInt(el('count').value,10) > 1) play(); else stop();
+    });
+    box.appendChild(line);
+  }
+  markSelected(parseInt(el('row').value, 10));
+}
+
+function markSelected(r){
+  var all = document.querySelectorAll('.sheetrow');
+  for (var i = 0; i < all.length; i++){
+    all[i].classList.toggle('on', parseInt(all[i].dataset.row,10) === r);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   THE ACTUAL SPRITE TRICK — this is the bit the real site will reuse.
+   Given a row, a column and a zoom level, produce the CSS that shows
+   that one photo and nothing else.
+
+   background-size   = the WHOLE picture, scaled up by `zoom`
+   background-position = slide it left/up so the photo we want lands in
+                         the little window (negative numbers = slide left)
+   --------------------------------------------------------------------- */
+function cellStyle(row, col, zoom){
+  if (!sheet.url) return '';
+  var z = zoom || 1;
+  /* NOTE the SINGLE quotes around the address below. This text gets
+     dropped inside an HTML style="..." attribute, so using double
+     quotes here would close that attribute early and the picture would
+     silently fail to appear. Small detail, real bug. */
+  return "background-image:url('" + sheet.url + "');" +
+         'background-size:' + (sheet.w * z) + 'px ' + (sheet.h * z) + 'px;' +
+         'background-position:' + (-col * FRAME * z) + 'px ' + (-row * FRAME * z) + 'px;';
+}
+
+/* Draw the big preview square using whatever the inputs currently say.
+   Same three CSS properties as cellStyle() above, just set one at a
+   time instead of as a text blob. */
+function draw(){
+  if (!sheet.url) return;
+  var row  = +el('row').value;
+  var col  = +el('col').value;
+  var zoom = Math.max(1, +el('zoom').value);
+  var st   = el('stage');
+
+  st.style.width  = (FRAME * zoom) + 'px';
+  st.style.height = (FRAME * zoom) + 'px';
+  st.style.backgroundImage    = 'url("' + sheet.url + '")';
+  st.style.backgroundSize     = (sheet.w * zoom) + 'px ' + (sheet.h * zoom) + 'px';
+  st.style.backgroundPosition = (-col * FRAME * zoom) + 'px ' +
+                                (-row * FRAME * zoom) + 'px';
+  writeLine();
+}
+
+/* ---------------------------------------------------------------------
+   PLAYING A ROW
+   setInterval runs a bit of code over and over. Each time, we move one
+   column to the right; when we run past the last frame we start again.
+   --------------------------------------------------------------------- */
+var timer = null;
+function play(){
+  stop();
+  var row   = +el('row').value;
+  var n     = Math.max(1, +el('count').value);
+  var fps   = Math.max(1, +el('fps').value);
+  var frame = 0;
+  timer = setInterval(function(){
+    el('col').value = frame;
+    draw();
+    frame = (frame + 1) % n;
+  }, 1000 / fps);
+}
+function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+
+el('play').addEventListener('click', play);
+el('stop').addEventListener('click', stop);
+
+/* Any input change redraws; changing row/count also restarts the loop. */
+['row','col','zoom'].forEach(function(id){
+  el(id).addEventListener('input', function(){
+    if (id === 'row') markSelected(+el('row').value);
+    draw();
+  });
+});
+['fps','count'].forEach(function(id){
+  el(id).addEventListener('input', function(){ if (timer) play(); writeLine(); });
+});
+el('name').addEventListener('input', writeLine);
+el('loop').addEventListener('change', writeLine);
+
+/* ---------------------------------------------------------------------
+   THE OUTPUT LINE — formatted exactly like the lines in cat-frames.js
+   so it can be pasted straight in.
+   --------------------------------------------------------------------- */
+function writeLine(){
+  if (!sheet.url) return;
+  var name = (el('name').value || 'my-action').trim();
+  var loop = el('loop').value;
+  var n    = (loop === 'single-still') ? 1 : Math.max(1, +el('count').value);
+  var fps  = (n === 1) ? 0 : Math.max(1, +el('fps').value);
+  /* `from` is always 0: animations in this pack start at the leftmost
+     column. The Col box above is just for looking around by hand. */
+  el('line').textContent =
+    '"' + name + '": { row: ' + (+el('row').value) +
+    ', from: 0, count: ' + n + ', fps: ' + fps + ', loop: "' + loop + '" },';
+}
+
+el('copy').addEventListener('click', function(){
+  var txt = el('line').textContent;
+  /* navigator.clipboard is blocked on plain file:// in some browsers,
+     so fall back to the old select-and-copy trick. */
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(flash, manualCopy);
+  } else manualCopy();
+  function manualCopy(){
+    var ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); flash(); } catch(e){ alert(txt); }
+    document.body.removeChild(ta);
+  }
+  function flash(){
+    var b = el('copy'); var old = b.textContent;
+    b.textContent = '✓ Copied!';
+    setTimeout(function(){ b.textContent = old; }, 1200);
+  }
+});
+</script>
+</body>
+</html>
