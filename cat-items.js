@@ -120,6 +120,41 @@ const CAT_WATER = [
   { id:"water", zh:"清水", en:"Fresh water", price:5, file:"water_bottle.png", category:"water" },
 ];
 
+/* WATER TOP-UPS — the same idea as the food bowl, but its own settings so
+   you can make water cheaper / slower / kinder than food independently.
+
+   ⚠️ maxLevel is 1 because you only have ONE water picture
+   (water_bottle.png), so water can only be "there" or "not there".
+   If you later crop a set of level pictures (empty -> full), add them to
+   the water item above exactly like the bowls do:
+
+       { id:"water", zh:"清水", en:"Fresh water", price:5, category:"water",
+         levels:["water_0.png","water_1.png","water_2.png"] },
+
+   ...and set maxLevel below to the last index (2 in that example). The
+   code handles both shapes on its own; nothing else needs changing.
+
+   THE COIN MATHS (see the long note under BOWL_RULES for why this matters)
+   Water at 24 hours costs 3 coins a day. Food at 12 hours costs 10. So
+   keeping BOTH permanently topped up runs about 13 coins a day, against a
+   10-coin daily check-in. Someone who only ever opens the app and never
+   plays will therefore drift about 3 coins a day short of keeping both
+   full — which is HARMLESS, because an empty dish has no penalty at all;
+   they simply keep one topped up instead of two.
+   Want the old "a passive visitor can keep everything full" property back?
+   Change decayHours under BOWL_RULES from 12 to 24. That drops food to
+   5/day, so food + water = 8/day, comfortably under the check-in. */
+const WATER_RULES = {
+  feedStep:   1,    // levels a top-up adds
+  feedCost:   3,    // coins per top-up (cheaper than food on purpose)
+  decayHours: 24,   // real hours to drop one level
+  maxLevel:   1,    // 1 = simply full or empty (one picture)
+
+  /* Same rule as the food bowl, and it is not negotiable: an empty water
+     dish must never make the cat sad, sick, thirsty or unhappy. It is an
+     opportunity to be kind, never a debt. */
+};
+
 
 /* =====================================================================
    TOYS — 1 mouse, 1 bee, 1 carrot, and 3-4 balls (pick your favorites;
@@ -218,8 +253,31 @@ const CAT_ACCESSORIES = [
    x,y are % of the room (0-100). pose must match a cat action name.
    ===================================================================== */
 const ROOM_SPOTS = [
-  { id:"by-bowl", x:25, y:70, needs:"bowl", pose:"eat-front" },
-  { id:"in-bed",  x:72, y:68, needs:"bed",  pose:"sleep-lay-front-l" },
-  { id:"at-post", x:80, y:35, needs:"post", pose:"itch-r" },
-  { id:"center",  x:50, y:75, needs:null,   pose:"wash-sit" },  /* always valid fallback */
+  { id:"by-bowl",  x:22, y:70, needs:"bowl",  pose:"eat-front" },
+  { id:"at-water", x:38, y:74, needs:"water", pose:"drink-front" },
+  { id:"in-bed",   x:72, y:68, needs:"bed",   pose:"sleep-lay-front-l" },
+  { id:"at-post",  x:86, y:38, needs:"post",  pose:"itch-r" },
+  { id:"center",   x:52, y:76, needs:null,    pose:"wash-sit" },  /* always valid fallback */
 ];
+
+/* ⚠️ NOTE ABOUT "at-post"
+   That spot needs an item whose category is "post" — a scratching post.
+   There is no scratching-post item anywhere in this file yet, so right
+   now the cat can never stand there and the spot is simply skipped.
+
+   Nothing is broken; it just never happens. To switch it on, crop a
+   scratching-post PNG into items/ and add a section like this:
+
+       const CAT_POSTS = [
+         { id:"post-tan", zh:"貓抓柱", en:"Scratching post",
+           price:30, file:"tan_post.png", category:"post" },
+       ];
+
+   ...then tell me and I will add it to the shop list. (If you do not
+   have post art, you can instead delete the "at-post" line above — the
+   cat will just use the other spots.)
+
+   NOTE ABOUT "drink-front"
+   That pose is not in cat-frames.js with a real row yet, so the cat will
+   use its normal idle pose at the water. If you spot a drinking row in
+   sprite-lab.html, add it as "drink-front" and it switches on by itself. */

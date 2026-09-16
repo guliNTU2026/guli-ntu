@@ -114,6 +114,11 @@ const CAT_FRAMES = {
      cat is standing at its food bowl. ---- */
   "eat-front":   { row: null, from: 0, count: 6, fps: 7, loop: "loop" },
 
+  /* ---- USED BY cat-items.js → ROOM_SPOTS "at-water". The cat drinking.
+     If the pack has no drinking row, leave this null forever — the cat
+     will sit normally at the water dish, which looks perfectly fine. ---- */
+  "drink-front": { row: null, from: 0, count: 6, fps: 6, loop: "loop" },
+
   /* ---- USED BY cat-items.js → ROOM_SPOTS "in-bed". The cat curled up
      asleep, facing front, lying on its left. ---- */
   "sleep-lay-front-l": { row: null, from: 0, count: 4, fps: 2, loop: "loop-slow" },

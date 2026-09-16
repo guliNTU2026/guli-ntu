@@ -12,7 +12,15 @@
    all live in cat-items.js instead. This file just obeys them.
 
    ---------------------------------------------------------------------
-   THE ONE CLEVER BIT: HOW THE BOWL EMPTIES
+   TWO DISHES, ONE SET OF RULES
+   ---------------------------------------------------------------------
+   The cat has a FOOD bowl and a WATER dish. They work identically, they
+   just have their own settings (BOWL_RULES and WATER_RULES, both in
+   cat-items.js). Everywhere below, "dish" means either one — the word
+   "food" or the word "water".
+
+   ---------------------------------------------------------------------
+   THE ONE CLEVER BIT: HOW A DISH EMPTIES
    ---------------------------------------------------------------------
    The bowl does NOT tick down while someone is looking at it. That would
    be stressful, and it would mean the site has to keep running a timer.
@@ -62,11 +70,28 @@ const CatState = (function () {
       owned:   [],     // ids of everything bought, from cat-items.js
       placed:  {},     // what is out in the room: { bowl:"bowl-green", bed:"bed-red" }
       worn:    [],     // accessory ids currently on the cat
-      bowl:    { level: 0, since: 0 },  // fill level, and when it reached that level
-      lastSpot: null,  // where the cat was standing last visit (used in a later step)
+      /* One entry per dish. "level" is how full it is, "since" is when it
+         reached that level. See settleDish() below. */
+      dishes: {
+        food:  { level: 0, since: 0 },
+        water: { level: 0, since: 0 }
+      },
+      visits:   0,     // how many times the room has been opened (used to move the cats about)
       lastSeen: 0      // when the page was last opened
     };
   }
+
+  /* Which rules apply to which dish. Returns null if cat-items.js has not
+     loaded, which makes every dish operation a harmless no-op rather than
+     a crash. */
+  function rulesFor(dish) {
+    if (dish === "water") return (typeof WATER_RULES !== "undefined") ? WATER_RULES : null;
+    return (typeof BOWL_RULES !== "undefined") ? BOWL_RULES : null;
+  }
+
+  /* Which "placed" slot holds the item for this dish. The food bowl is
+     stored under placed.bowl, the water under placed.water. */
+  function slotFor(dish) { return dish === "water" ? "water" : "bowl"; }
 
   /* ------------------------------------------------------------------
      Reading and writing.
@@ -81,14 +106,32 @@ const CatState = (function () {
     const saved = Buddy.get(BRANCH);
     if (!saved) return blank();
 
-    /* Gently repair anything missing. A save written by an older version
-       of this file might not have every field yet; rather than crash, we
-       fill the gaps with blanks. */
+    /* MIGRATION FIRST, REPAIRS SECOND. The order matters and is the kind
+       of thing that is easy to get backwards: an earlier version of this
+       file stored a single bowl as `bowl: {level, since}`. If we filled
+       in the missing `dishes` field BEFORE looking for that old `bowl`,
+       the old bowl would never be spotted and the visitor's food level
+       would silently reset to empty. So: rescue the old shape first. */
+    if (saved.bowl && !saved.dishes) {
+      saved.dishes = { food: saved.bowl, water: { level: 0, since: 0 } };
+      delete saved.bowl;
+    }
+
+    /* Now gently repair anything still missing. A save written by an
+       older version might not have every field yet; rather than crash,
+       we fill the gaps with blanks. */
     const fresh = blank();
     for (const key in fresh) {
       if (saved[key] === undefined || saved[key] === null) saved[key] = fresh[key];
     }
-    if (!saved.bowl || typeof saved.bowl.level !== "number") saved.bowl = fresh.bowl;
+
+    /* Repair the dishes if anything is missing or the wrong shape. */
+    if (!saved.dishes || typeof saved.dishes !== "object") saved.dishes = fresh.dishes;
+    ["food", "water"].forEach(function (d) {
+      if (!saved.dishes[d] || typeof saved.dishes[d].level !== "number") {
+        saved.dishes[d] = { level: 0, since: 0 };
+      }
+    });
     return saved;
   }
 
@@ -104,41 +147,48 @@ const CatState = (function () {
      levels were lost (so the page can say "the bowl is emptier than you
      left it" if it wants to).
      ------------------------------------------------------------------ */
-  function settleBowl(cat, now) {
-    const rules   = (typeof BOWL_RULES !== "undefined") ? BOWL_RULES : null;
+  function settleDish(cat, dish, now) {
+    const rules = rulesFor(dish);
     if (!rules) return 0;
+    const d = cat.dishes[dish];
+    if (!d) return 0;
     const periodMs = Math.max(1, rules.decayHours) * 60 * 60 * 1000;
 
     /* First time ever, or a save with no timestamp: start the clock now. */
-    if (!cat.bowl.since) { cat.bowl.since = now; return 0; }
+    if (!d.since) { d.since = now; return 0; }
 
-    const elapsed = now - cat.bowl.since;
+    const elapsed = now - d.since;
 
     /* CLOCK WENT BACKWARDS. This really happens: people travel, change
        time zones, or fix a wrong clock on a cheap phone. Without this
        check a negative "elapsed" would divide into a negative number of
        drops and the bowl would magically REFILL itself. Just reset the
        clock and carry on. */
-    if (elapsed < 0) { cat.bowl.since = now; return 0; }
+    if (elapsed < 0) { d.since = now; return 0; }
 
     /* Not a whole period yet — nothing to do. */
     if (elapsed < periodMs) return 0;
 
     const drops  = Math.floor(elapsed / periodMs);
-    const before = cat.bowl.level;
-    cat.bowl.level = Math.max(0, cat.bowl.level - drops);
+    const before = d.level;
+    d.level = Math.max(0, d.level - drops);
 
     /* Keep the remainder. If 30 hours passed and a period is 12, we used
        up 24 of them; the spare 6 hours carry forward so the next drop is
        6 hours away, not a fresh 12. */
-    cat.bowl.since = cat.bowl.since + drops * periodMs;
+    d.since = d.since + drops * periodMs;
 
-    /* Once the bowl is empty there is nothing left to lose, so pin the
+    /* Once the dish is empty there is nothing left to lose, so pin the
        clock to now. Otherwise "since" would sit months in the past and
-       the very first feed would instantly decay away again. */
-    if (cat.bowl.level === 0) cat.bowl.since = now;
+       the very first top-up would instantly decay away again. */
+    if (d.level === 0) d.since = now;
 
-    return before - cat.bowl.level;
+    return before - d.level;
+  }
+
+  /* Settle both dishes at once. Returns how many levels were lost in total. */
+  function settleAll(cat, now) {
+    return settleDish(cat, "food", now) + settleDish(cat, "water", now);
   }
 
   /* ================================================================
@@ -151,11 +201,22 @@ const CatState = (function () {
     load(now) {
       now = now || Date.now();
       const cat = readRaw();
-      const lost = settleBowl(cat, now);
+      const lost = settleAll(cat, now);
       cat.lastSeen = now;
       /* Only write back if something actually changed, to avoid pointless
          saving on every single page load. */
-      if (lost > 0 || !cat.bowl.since) writeRaw(cat);
+      if (lost > 0 || !cat.dishes.food.since || !cat.dishes.water.since) writeRaw(cat);
+      return cat;
+    },
+
+    /* Count this as a new visit. Call once when the room is opened — it is
+       what makes the cats stand somewhere different each time. */
+    noteVisit(now) {
+      const cat = readRaw();
+      settleAll(cat, now || Date.now());
+      cat.visits = (cat.visits || 0) + 1;
+      cat.lastSeen = now || Date.now();
+      writeRaw(cat);
       return cat;
     },
 
@@ -172,65 +233,236 @@ const CatState = (function () {
          { ok:false, reason:"full",   level:4 }    already full
          { ok:false, reason:"broke",  need:5 }     not enough coins
        ---------------------------------------------------------------- */
-    feed(now) {
-      now = now || Date.now();
-      const rules = (typeof BOWL_RULES !== "undefined") ? BOWL_RULES : null;
+    feed(dish, now) {
+      dish = (dish === "water") ? "water" : "food";
+      now  = now || Date.now();
+      const rules = rulesFor(dish);
       if (!rules) return { ok: false, reason: "no-rules" };
 
       const cat = readRaw();
-      settleBowl(cat, now);
+      settleAll(cat, now);
 
-      /* You need a bowl in the room before you can put food in it. */
-      if (!cat.placed || !cat.placed.bowl) return { ok: false, reason: "no-bowl" };
+      /* You need the dish in the room before you can put anything in it. */
+      const slot = slotFor(dish);
+      if (!cat.placed || !cat.placed[slot]) return { ok: false, reason: "no-dish", dish: dish };
 
       /* Already full — don't take their coins for nothing. */
-      if (cat.bowl.level >= rules.maxLevel) {
-        return { ok: false, reason: "full", level: cat.bowl.level };
+      if (cat.dishes[dish].level >= rules.maxLevel) {
+        return { ok: false, reason: "full", dish: dish, level: cat.dishes[dish].level };
       }
 
-      /* Try to pay. Buddy.spend returns false and changes nothing if
-         they cannot afford it, so the order here is safe: we never raise
-         the level unless the coins actually left. */
+      /* Try to pay. Buddy.spend returns false and changes nothing if they
+         cannot afford it, so the order here is safe: we never raise the
+         level unless the coins actually left. */
       const cost = rules.feedCost;
       if (typeof Buddy === "undefined" || !Buddy.spend || !Buddy.spend(cost)) {
-        return { ok: false, reason: "broke", need: cost };
+        return { ok: false, reason: "broke", dish: dish, need: cost };
       }
 
-      cat.bowl.level = Math.min(rules.maxLevel, cat.bowl.level + rules.feedStep);
-      /* Restart the clock, so a feed always buys a full fresh period.
+      cat.dishes[dish].level = Math.min(rules.maxLevel, cat.dishes[dish].level + rules.feedStep);
+      /* Restart the clock, so a top-up always buys a full fresh period.
          Slightly generous on purpose — this is meant to feel kind. */
-      cat.bowl.since = now;
+      cat.dishes[dish].since = now;
       writeRaw(cat);
 
-      return { ok: true, level: cat.bowl.level, spent: cost };
+      return { ok: true, dish: dish, level: cat.dishes[dish].level, spent: cost };
     },
 
     /* ----------------------------------------------------------------
-       Which bowl picture to show right now.
-       Returns the filename for the current fill level, or null if no
-       bowl has been placed in the room yet.
+       Which picture to show for a dish right now.
+
+       Bowls have one picture per fill level, so we pick the matching one.
+       The water dish currently has only a single picture, so it is either
+       shown (level above 0) or not shown at all (level 0). If you later
+       add a "levels" list to the water item, it automatically starts
+       behaving like the bowls — no code change needed.
+       Returns null when there is nothing to draw.
        ---------------------------------------------------------------- */
-    bowlImage(cat) {
-      if (!cat || !cat.placed || !cat.placed.bowl) return null;
-      if (typeof CAT_BOWLS === "undefined") return null;
-      const bowl = CAT_BOWLS.find(b => b.id === cat.placed.bowl);
-      if (!bowl || !bowl.levels || !bowl.levels.length) return null;
-      /* Clamp, so a bad level number can never crash the page — it just
-         shows the closest picture that does exist. */
-      const i = Math.min(Math.max(cat.bowl.level, 0), bowl.levels.length - 1);
-      return bowl.levels[i];
+    dishImage(cat, dish) {
+      dish = (dish === "water") ? "water" : "food";
+      if (!cat || !cat.placed) return null;
+      const slot = slotFor(dish);
+      const placedId = cat.placed[slot];
+      if (!placedId) return null;
+
+      const list = (dish === "water")
+        ? (typeof CAT_WATER !== "undefined" ? CAT_WATER : [])
+        : (typeof CAT_BOWLS !== "undefined" ? CAT_BOWLS : []);
+      const item = list.find(b => b.id === placedId);
+      if (!item) return null;
+
+      const level = cat.dishes[dish].level;
+
+      /* Shape A: a list of pictures, one per level. */
+      if (item.levels && item.levels.length) {
+        /* Clamp, so a bad level number can never crash the page — it just
+           shows the closest picture that does exist. */
+        const i = Math.min(Math.max(level, 0), item.levels.length - 1);
+        return item.levels[i];
+      }
+
+      /* Shape B: a single picture. Empty means show nothing. */
+      if (!item.file) return null;
+      return level > 0 ? item.file : null;
     },
 
-    /* How many whole hours until the bowl drops another level.
+    /* How many whole hours until this dish drops another level.
        Handy for a gentle "next meal in about 7 hours" caption.
-       Returns null when the bowl is already empty (nothing to count). */
-    hoursUntilDrop(cat, now) {
+       Returns null when the dish is already empty (nothing to count). */
+    hoursUntilDrop(cat, dish, now) {
+      dish = (dish === "water") ? "water" : "food";
       now = now || Date.now();
-      const rules = (typeof BOWL_RULES !== "undefined") ? BOWL_RULES : null;
-      if (!rules || !cat || cat.bowl.level <= 0) return null;
+      const rules = rulesFor(dish);
+      if (!rules || !cat || !cat.dishes[dish] || cat.dishes[dish].level <= 0) return null;
       const periodMs = Math.max(1, rules.decayHours) * 60 * 60 * 1000;
-      const left = (cat.bowl.since + periodMs) - now;
+      const left = (cat.dishes[dish].since + periodMs) - now;
       return Math.max(0, Math.round(left / (60 * 60 * 1000)));
+    },
+
+    /* ================================================================
+       THE CAT ROSTER — owning more than one cat
+       ================================================================
+       Short answer to "is this too hard to track?": no, not at all. The
+       save already holds a list of every colour owned, so counting them
+       is just counting that list. Each colour is remembered separately,
+       so switching between them loses nothing.
+
+       The FIRST cat is free. Every extra colour costs EXTRA_CAT_PRICE
+       coins (set in cat-items.js). Switching between cats you already
+       own is always free.
+       ================================================================ */
+
+    /* How many cats does this visitor own? */
+    catCount(cat) {
+      if (!cat || !cat.cats) return 0;
+      return Object.keys(cat.cats).length;
+    },
+
+    /* The full list of owned cats, as entries from CAT_COLORS, in the
+       order they were adopted. Each gets an `owned` and `active` flag so
+       a shop screen can draw the whole roster in one pass. */
+    ownedCats(cat) {
+      if (typeof CAT_COLORS === "undefined") return [];
+      if (!cat || !cat.cats) return [];
+      return Object.keys(cat.cats)
+        .sort((a, b) => (cat.cats[a].adoptedAt || 0) - (cat.cats[b].adoptedAt || 0))
+        .map(id => {
+          const colour = CAT_COLORS.find(c => c.id === id);
+          if (!colour) return null;   // colour deleted from cat-items.js — skip it
+          return Object.assign({}, colour, { owned: true, active: cat.active === id });
+        })
+        .filter(Boolean);
+    },
+
+    /* What the shop should show: every colour, marked owned or not, with
+       the price of the next one worked out. */
+    catRoster(cat) {
+      if (typeof CAT_COLORS === "undefined") return [];
+      const owned = (cat && cat.cats) ? cat.cats : {};
+      const isFirst = Object.keys(owned).length === 0;
+      const price = isFirst ? 0
+        : (typeof EXTRA_CAT_PRICE !== "undefined" ? EXTRA_CAT_PRICE : 0);
+      return CAT_COLORS.map(c => ({
+        id: c.id, zh: c.zh, en: c.en, file: c.file,
+        owned:  !!owned[c.id],
+        active: cat ? cat.active === c.id : false,
+        /* what it would cost to get this one right now; 0 if already owned */
+        price:  owned[c.id] ? 0 : price
+      }));
+    },
+
+    /* ----------------------------------------------------------------
+       Adopt a colour, or switch to one already owned.
+       Returns:
+         { ok:true, spent:0,  count:1, switched:false }   first cat, free
+         { ok:true, spent:40, count:2, switched:false }   bought another
+         { ok:true, spent:0,  count:2, switched:true  }   switched, free
+         { ok:false, reason:"broke",   need:40 }
+         { ok:false, reason:"unknown-colour" }
+       ---------------------------------------------------------------- */
+    adopt(colourId, now) {
+      now = now || Date.now();
+      if (typeof CAT_COLORS === "undefined") return { ok: false, reason: "no-colours" };
+      if (!CAT_COLORS.some(c => c.id === colourId)) {
+        return { ok: false, reason: "unknown-colour" };
+      }
+
+      const cat = readRaw();
+
+      /* Already own it — just bring it to the front. Always free. */
+      if (cat.cats[colourId]) {
+        cat.active = colourId;
+        writeRaw(cat);
+        return { ok: true, spent: 0, count: Object.keys(cat.cats).length, switched: true };
+      }
+
+      /* First cat is free; the rest cost coins. */
+      const isFirst = Object.keys(cat.cats).length === 0;
+      const price = isFirst ? 0
+        : (typeof EXTRA_CAT_PRICE !== "undefined" ? EXTRA_CAT_PRICE : 0);
+
+      if (price > 0) {
+        if (typeof Buddy === "undefined" || !Buddy.spend || !Buddy.spend(price)) {
+          return { ok: false, reason: "broke", need: price };
+        }
+      }
+
+      cat.cats[colourId] = { adoptedAt: now };
+      cat.active = colourId;
+      writeRaw(cat);
+      return { ok: true, spent: price, count: Object.keys(cat.cats).length, switched: false };
+    },
+
+    /* ----------------------------------------------------------------
+       WHERE EVERY CAT STANDS.
+
+       Works out a spot for each cat the visitor owns, so they can all be
+       in the room together rather than one at a time.
+
+       A spot from ROOM_SPOTS only counts if the thing it needs is
+       actually in the room — no bed means no sleeping spot. "center"
+       needs nothing, so there is always at least one place to stand.
+
+       Cats never share a spot. If there are more cats than spots, the
+       extras line up along the floor, evenly spaced, in their idle pose.
+
+       The `visits` count rotates who stands where, so the room looks
+       different each time it is opened — that is the cheap version of
+       "the cat moved while you were away", with no walking to animate.
+
+       Returns: [ { colour, file, x, y, pose, spot } ]  (x,y are % of the room)
+       ---------------------------------------------------------------- */
+    arrangeCats(cat, spin) {
+      if (typeof ROOM_SPOTS === "undefined" || typeof CAT_COLORS === "undefined") return [];
+      const owned = this.ownedCats(cat);
+      if (!owned.length) return [];
+
+      /* Which spots are usable right now? */
+      const placed = (cat && cat.placed) ? cat.placed : {};
+      const usable = ROOM_SPOTS.filter(sp => !sp.needs || placed[sp.needs]);
+      if (!usable.length) return [];
+
+      /* Rotate the starting point so the arrangement changes per visit. */
+      const rot = Math.abs(Math.round(
+        (spin === undefined || spin === null) ? (cat.visits || 0) : spin
+      )) % usable.length;
+
+      const overflow = Math.max(0, owned.length - usable.length);
+      let overflowSeen = 0;
+
+      return owned.map((colour, i) => {
+        if (i < usable.length) {
+          const sp = usable[(i + rot) % usable.length];
+          return { colour: colour.id, file: colour.file,
+                   x: sp.x, y: sp.y, pose: sp.pose, spot: sp.id };
+        }
+        /* More cats than spots: spread the rest along the floor so they
+           never sit exactly on top of each other. */
+        overflowSeen++;
+        return { colour: colour.id, file: colour.file,
+                 x: Math.round(100 * overflowSeen / (overflow + 1)),
+                 y: 88, pose: "idle", spot: "floor" };
+      });
     },
 
     /* ----------------------------------------------------------------
@@ -281,7 +513,7 @@ const CatState = (function () {
 
     /* Exposed for the test page only. Lets a test pretend that hours
        have passed without anyone waiting around for half a day. */
-    _settleBowl: settleBowl,
+    _settleDish: settleDish,
     _blank: blank,
   };
 })();

@@ -20,7 +20,8 @@ Nothing goes live until you are happy.
 | Step | What it does | Status |
 |---|---|---|
 | 1 | Show one pixel-art frame on screen; set up the editable animation list | ✅ **done — test it now** |
-| 1.5 | The feeding loop + seasonal items wiring | ✅ **done — test it now** |
+| 1.5 | Feeding loop (food **and** water) + seasonal items | ✅ **done — test it now** |
+| 1.6 | Owning several cats at once, and where they stand | ✅ **done — test it now** |
 | 2 | The cat animates in place; four colours to adopt | ⏳ needs `cat-frames.js` filled in |
 | 3 | The room, the shop, the furniture | ⏳ needs the item PNGs uploaded |
 | 4 | "The cat moved while you were away" | ⏳ |
@@ -115,10 +116,12 @@ is just less lively. You can come back and finish later.
 > cat** (about row 43). The workbench shades them orange. We are deliberately
 > not using them — see "Why there is no sad cat" below.
 
-### 3. Send me the artist's details
+### 3. Two small things on the art
 
-The artist's **name**, the **pack name**, and the **download link** — so I can
-finish `CREDITS.md` and add a proper credit line to the FAQ page.
+- The **exact pack name** and its **itch.io link**, so I can finish `CREDITS.md`
+  and add a credit line to `faq.html`.
+- Consider sending Last Tick the short message drafted in `CREDITS.md`.
+- Decide whether you want a **scratching post** (see the gap noted below).
 
 ---
 
@@ -215,10 +218,106 @@ than no credit at all.
 
 ---
 
-## Testing the feeding loop right now
+## Round two: water, multiple cats, and the licence
+
+### Water: ✅ built, with its own separate timer
+
+Water works exactly like the food bowl but has its own settings in
+`WATER_RULES`, so you can tune it independently. It is **cheaper and slower**
+than food on purpose:
+
+| | Food | Water |
+|---|---|---|
+| Costs | 5 🪙 | 3 🪙 |
+| Empties a level every | 12 h | 24 h |
+| Cost to keep full | 10 🪙/day | 3 🪙/day |
+
+**One honest consequence you should know about.** Last time I made a point of
+food costing exactly the 10-coin daily check-in, so a totally passive visitor
+could break even. Adding water pushes the combined cost to **13 🪙/day**, which
+is 3 above the check-in. A passive visitor now drifts slightly short of keeping
+*both* topped up.
+
+I think that is fine — an empty dish has no penalty, so they simply keep one
+full instead of two, and a single quiz question covers the difference. But it is
+your call, and it is one number: **change `decayHours` under `BOWL_RULES` from
+12 to 24** and food drops to 5/day, making the pair 8/day and restoring the
+break-even property. Say the word and I'll change it.
+
+> ⚠️ **Your water art only has one picture** (`water_bottle.png`), so water is
+> currently just *there* or *not there* (`maxLevel: 1`). If you ever crop a set
+> of empty→full water pictures, add them as a `levels:` list exactly like the
+> bowls and bump `maxLevel` — the code already handles both shapes, no changes
+> needed.
+
+### Multiple cats: ✅ built — and no, it isn't hard at all
+
+To answer your actual question directly: **tracking how many cats someone owns
+is easy.** The save already holds a list of owned colours, so counting them is
+just counting that list. Each colour keeps its own progress, and switching
+between ones you own is free.
+
+I went one better than switching, because I think it is what you actually
+wanted: **every cat you own is in the room at the same time**, each in its own
+spot. Four cats, four different places, four different poses. Nobody overlaps.
+If there are ever more cats than spots, the extras line up neatly along the
+floor.
+
+It also gave us Step 4 almost for free: the cats **rearrange between visits**,
+so the room looks different each time it is opened — "the cat moved while you
+were away", with no walking animation needed.
+
+First cat free, extras cost 40 🪙 (`EXTRA_CAT_PRICE`), switching always free.
+
+### Licence: my read is that we're fine — but there's one cheap thing to do
+
+Short version, full reasoning in **`CREDITS.md`**:
+
+- **Showing the art on the site is fine.** There is no way to display an image
+  without sending it to the browser. If that counted as redistribution, the
+  licence would forbid all web use — contradicting its own "commercial use is
+  allowed" line.
+- **The public *repo* is the greyer bit**, and your instinct was reasonable. A
+  website *displays* files; a public repo *distributes* them — one `git clone`
+  hands someone a tidy folder of source PNGs. I don't think it crosses the line,
+  but it's closer than it needs to be.
+- **Do this regardless:** commit only the 4 cat colours and the items you
+  actually sell. Not the pack `.zip`, not its readme, not the other 9 colours. A
+  folder holding the whole pack *looks like* a copy of the pack.
+- **If you want the repo private too, it's free:** Cloudflare Pages and Netlify
+  both deploy from a private GitHub repo on their free tiers. GitHub Pages
+  needs a paid plan for that; those two don't.
+- **The move that actually settles it: ask Last Tick.** There's a draft message
+  in `CREDITS.md` you can paste. A one-line "sure, that's fine" is worth more
+  than any amount of careful reading, and plenty of itch.io artists would be
+  glad to be in a university public-health project.
+
+I'm not a lawyer and that's a reading, not legal advice — which is exactly why
+asking is worth ten minutes.
+
+### ⚠️ One gap I found: there is no scratching post
+
+`ROOM_SPOTS` has an `at-post` spot where the cat scratches — but **no
+scratching-post item exists anywhere in `cat-items.js`**, in any category. So
+that spot can never become valid and is silently skipped.
+
+Nothing is broken. But if you want it, crop a post PNG into `items/` and tell
+me; there's a comment in `cat-items.js` showing exactly what to add. (Or I can
+delete the spot.)
+
+---
+
+## Testing all of it right now
 
 Open **`cat-bowl-demo.html`**. It is a maintainer-only test bench that uses the
 real rules and the real save file, so what you see is what visitors will get.
+
+**For the cats:** press the colour tiles. The first is free, the rest cost 40.
+Watch the room preview — every cat you own appears, each in its own spot. Press
+**Next visit** a few times and watch them rearrange. Then press **Empty the
+room** and confirm they all still have somewhere sensible to stand.
+
+**For food and water:**
 
 Try this, in order:
 
