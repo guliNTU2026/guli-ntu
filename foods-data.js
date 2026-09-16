@@ -57,6 +57,14 @@ const VENUES = [
              auto-generates one from the nutrition numbers.
    tip       OPTIONAL one-line fun fact shown after a 營養大對決
              question that uses this food.
+   hidden    OPTIONAL. Set  hidden: true  to keep a food in this list but
+             STOP SHOWING IT anywhere in either app. Its data stays here
+             untouched, so nothing else breaks, and deleting that one
+             line brings it straight back.
+             Currently used for foods that have no suitable emoji — a
+             plain coloured square standing in for a food looks
+             unfinished, so those foods wait here until they have a
+             proper picture.
    --------------------------------------------------------------- */
 const FOODS = [
 
@@ -88,6 +96,9 @@ const FOODS = [
     wholeGrain: true },
 
   { id: "luobogao",  zh: "蘿蔔糕",     en: "Turnip cake", emoji: "◻️",
+    /* HIDDEN: ◻️ is a plain white square — there is no turnip-cake emoji.
+       Delete the `hidden` line below to show this food again. */
+    hidden: true,
     role: "main", venues: ["breakfast"],
     nutrition: { protein: 4,  fiber: 1.5, sodium: 500,  calcium: 40 },
     wholeGrain: false, serving: "2片" },
@@ -203,16 +214,25 @@ const FOODS = [
     wholeGrain: false },
 
   { id: "dougan",    zh: "豆干",       en: "Dried tofu", emoji: "🟫",
+    /* HIDDEN: 🟫 is a plain brown square — there is no dried-tofu emoji.
+       Delete the `hidden` line below to show this food again. */
+    hidden: true,
     role: "addon", venues: ["noodle"],
     nutrition: { protein: 10, fiber: 1,   sodium: 300,  calcium: 150 },
     wholeGrain: false },
 
   { id: "seaweed",   zh: "海帶",       en: "Seaweed", emoji: "🪸",
+    /* HIDDEN: 🪸 is CORAL, not seaweed, and is new enough to show as an empty box on older phones.
+       Delete the `hidden` line below to show this food again. */
+    hidden: true,
     role: "addon", venues: ["noodle"],
     nutrition: { protein: 2,  fiber: 2,   sodium: 350,  calcium: 80 },
     wholeGrain: false },
 
   { id: "tofu",      zh: "嫩豆腐",     en: "Soft tofu", emoji: "⬜",
+    /* HIDDEN: ⬜ is a plain white square — there is no tofu emoji.
+       Delete the `hidden` line below to show this food again. */
+    hidden: true,
     role: "addon", venues: ["noodle", "conv"],
     nutrition: { protein: 8,  fiber: 0.5, sodium: 30,   calcium: 120 },
     wholeGrain: false },
@@ -304,6 +324,59 @@ const SHARE = {
   hashtag: "#外食也能吃得好",   /* ✏️ EDIT HERE: your campaign hashtag */
   appName: { zh: "校園小夥伴", en: "Campus Buddy" },
 };
+
+
+/* ---------------------------------------------------------------
+   FUNDING STATEMENT — shown prominently on EVERY page.
+   ---------------------------------------------------------------
+   This is the required funding acknowledgement. It appears in a
+   bordered bar at the bottom of every page, at full opacity — not as
+   faded small print — because it is a compliance statement, not a
+   footnote.
+
+   The Chinese wording shows in BOTH language modes, because that exact
+   sentence is the official required text. The English line is an added
+   courtesy translation, shown only in English mode.
+
+   ⚠️ Do not reword the Chinese line without checking with whoever
+   handles the grant paperwork. It is prescribed wording.
+   --------------------------------------------------------------- */
+const FUNDING = {
+  zh: "經費由國民健康署運用菸品健康福利捐支應",
+  en: "Funded by the Health Promotion Administration, Ministry of Health and Welfare, through the Tobacco Health and Welfare Surcharge.",
+};
+
+
+/* ---------------------------------------------------------------
+   SOCIAL MEDIA LINKS — shown next to the funding statement.
+   ---------------------------------------------------------------
+   ✏️ EDIT HERE. Put your real address inside the quotes after url:.
+
+   A link whose url is still "" is HIDDEN automatically, so an
+   unfinished entry never shows as a dead link. Fill them in one at a
+   time as the accounts go live.
+
+   To ADD one: copy a line, change the label and the url.
+   To REMOVE one: delete its line (or just empty its url).
+   --------------------------------------------------------------- */
+const SOCIAL = [
+  { id: "instagram", label: "Instagram", icon: "📷", url: "" },  /* e.g. "https://www.instagram.com/youraccount" */
+  { id: "facebook",  label: "Facebook",  icon: "👍", url: "" },
+  { id: "line",      label: "LINE",      icon: "💬", url: "" },  /* e.g. your LINE official account */
+  { id: "youtube",   label: "YouTube",   icon: "▶️", url: "" },
+];
+
+
+/* ---------------------------------------------------------------
+   Helper: the foods that should actually be SHOWN to visitors.
+   ---------------------------------------------------------------
+   A food marked  hidden: true  stays in the master list above (so its
+   data, pairings and nutrition are all preserved) but never appears in
+   either app. Both apps call this instead of using FOODS directly.
+   --------------------------------------------------------------- */
+function visibleFoods() {
+  return FOODS.filter(function (f) { return !f.hidden; });
+}
 
 
 /* ---------------------------------------------------------------

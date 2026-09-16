@@ -166,7 +166,9 @@ function toggleLang(){
 
 /* ===================== quiz generation ===================== */
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-const pool=()=>FOODS.filter(f=>f.nutrition);
+/* Foods the quiz may use: must have nutrition numbers AND not be hidden
+   (a hidden food has no proper emoji yet — see foods-data.js). */
+const pool=()=>visibleFoods().filter(f=>f.nutrition);
 
 /* Build one comparison question with a clear winner */
 function makeCompareQ(usedPairs){

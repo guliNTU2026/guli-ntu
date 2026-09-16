@@ -245,7 +245,7 @@ function startHTML(){
        <span class="e">${F(m.items[0]).emoji}</span>${lang==="zh"?m.zh:m.en}</button>`).join("");
   const venueTabs = VENUES.map(v =>
     `<button class="tab ${v.id===curVenue?"on":""}" onclick="setVenue('${v.id}')">${v.emoji} ${lang==="zh"?v.zh:v.en}</button>`).join("");
-  const mains = FOODS.filter(f => (f.role==="main"||f.role==="both") && f.venues.includes(curVenue))
+  const mains = visibleFoods().filter(f => (f.role==="main"||f.role==="both") && f.venues.includes(curVenue))
     .map(f => `<button class="chip" onclick="addFood('${f.id}',this)"><span class="e">${f.emoji}</span>${nm(f)}</button>`).join("");
   return `
     <div class="card"><h2>${t("startPreset")}</h2><div class="chipgrid">${presets}</div></div>
@@ -276,12 +276,15 @@ function suggestions(){
   const vset = mealVenues();
   const inMeal = new Set(meal);
   const out = [];
-  /* 1. explicit pairings for each item in the meal */
+  /* 1. explicit pairings for each item in the meal.
+        A pairing may name a food that is currently hidden (no good emoji
+        yet) — skip those, so hiding a food never leaves a blank chip. */
   meal.forEach(id => (PAIRINGS[id]||[]).forEach(aid => {
-    if(!inMeal.has(aid) && !out.includes(aid)) out.push(aid);
+    const af = F(aid);
+    if(af && !af.hidden && !inMeal.has(aid) && !out.includes(aid)) out.push(aid);
   }));
   /* 2. fallback: addons that share a venue with the meal */
-  FOODS.forEach(f => {
+  visibleFoods().forEach(f => {
     if((f.role==="addon"||f.role==="both") && !inMeal.has(f.id) && !out.includes(f.id)
        && f.venues.some(v=>vset.has(v))) out.push(f.id);
   });
@@ -332,7 +335,7 @@ function closeBrowse(){ document.getElementById("browOv").classList.remove("on")
 function renderBrowseList(){
   const q=(document.getElementById("browSearch").value||"").toLowerCase().trim();
   const venueName=id=>{const v=VENUES.find(x=>x.id===id);return v?(lang==="zh"?v.zh:v.en):id;};
-  const list=FOODS
+  const list=visibleFoods()
     .filter(f=>!q || f.zh.toLowerCase().includes(q) || f.en.toLowerCase().includes(q))
     .sort((a,b)=>nm(a).localeCompare(nm(b), lang==="zh"?"zh-Hant":"en"));
   document.getElementById("browList").innerHTML=list.map(f=>{

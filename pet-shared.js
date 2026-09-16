@@ -389,6 +389,31 @@
     opacity:0;pointer-events:none;transition:opacity .2s, transform .2s}
   .bd-toast.on{opacity:1;transform:translateX(-50%) rotate(-2deg) translateY(-6px)}
   @media (prefers-reduced-motion:reduce){.bd-toast{transition:none}.bd-pet{animation:none}.bd-pet.eat{animation:none}}
+
+  /* ---------- funding statement + social links (every page) ----------
+     Deliberately NOT faded small print: this is a required funding
+     acknowledgement, so it gets a real border, full opacity and a
+     readable size. The bottom margin keeps it clear of the floating
+     pet button, which sits fixed in the bottom-right corner. */
+  .bd-fund{max-width:520px;margin:26px auto 0;padding:14px 16px;
+    background:var(--card,#fff);border:2.5px solid var(--ink,#3A3029);border-radius:16px;
+    box-shadow:3px 3px 0 var(--ink,#3A3029);text-align:center;
+    font-family:inherit;color:var(--ink,#3A3029)}
+  .bd-fund .bd-fund-logo{height:34px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto}
+  .bd-fund .bd-fund-zh{font-size:14px;font-weight:800;line-height:1.6}
+  .bd-fund .bd-fund-en{font-size:12px;line-height:1.55;opacity:.8;margin-top:5px}
+  .bd-fund .bd-social{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}
+  .bd-fund .bd-social a{display:inline-flex;align-items:center;gap:5px;
+    border:2px solid var(--ink,#3A3029);border-radius:999px;background:var(--paper,#FAF5EA);
+    padding:6px 13px;font-size:13px;font-weight:800;text-decoration:none;
+    color:var(--ink,#3A3029);box-shadow:2px 2px 0 var(--ink,#3A3029)}
+  .bd-fund .bd-social a:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink,#3A3029)}
+  /* A real spacer element, not a bottom margin. A trailing margin can
+     collapse out of the document, which let the floating pet button sit
+     on top of the social links and made them unclickable. An element
+     with height always reserves its space. */
+  .bd-fund-spacer{height:122px}
+  @media (max-width:420px){ .bd-fund{margin:20px 12px 0} }
   `;
 
   let toastTimer = null;
@@ -401,6 +426,40 @@
     toastTimer = setTimeout(() => el.classList.remove("on"), 1800);
   }
 
+  /* ------------------------------------------------------------------
+     The funding statement + social links, shown at the bottom of every
+     page. Both come from foods-data.js so there is ONE place to edit
+     them, and they then appear everywhere automatically — including on
+     any page added later.
+     ------------------------------------------------------------------ */
+  function fundingHTML() {
+    if (typeof FUNDING === "undefined") return "";
+
+    /* The Chinese line shows in BOTH languages: it is the official
+       required wording, not a translation of something. */
+    let html = "";
+    /* An optional HPA logo. If images/hpa-logo.png is not there, the
+       onerror hides it and nothing looks broken. */
+    html += `<img class="bd-fund-logo" src="images/hpa-logo.png" alt=""
+               onerror="this.style.display='none'">`;
+    html += `<div class="bd-fund-zh">${FUNDING.zh}</div>`;
+    if (lang === "en" && FUNDING.en) {
+      html += `<div class="bd-fund-en">${FUNDING.en}</div>`;
+    }
+
+    /* Social links — only the ones that actually have an address yet. */
+    if (typeof SOCIAL !== "undefined") {
+      const live = SOCIAL.filter(x => x && x.url && x.url.trim() !== "");
+      if (live.length) {
+        html += `<div class="bd-social">` + live.map(x =>
+          `<a href="${x.url}" target="_blank" rel="noopener"
+              onclick="if(window.Buddy&&Buddy.track)Buddy.track('social-${x.id}')"
+           >${x.icon || "🔗"} ${x.label}</a>`).join("") + `</div>`;
+      }
+    }
+    return html;
+  }
+
   function fab() {
     const d = load();
     const ap = activePet(d);
@@ -410,6 +469,7 @@
 
   function render() {
     const f = $(".bd-fab"); if (f) f.innerHTML = fab();
+    const fu = $(".bd-fund"); if (fu) fu.innerHTML = fundingHTML();
     const p = $(".bd-panel"); if (p && $(".bd-overlay").classList.contains("on")) p.innerHTML = panelHTML();
   }
 
@@ -511,6 +571,20 @@
   /* ---- boot: inject styles + widget, grant daily login bonus ---- */
   function boot() {
     const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+    /* Funding bar goes at the END of the page content, so it reads as a
+       footer. Appending to <body> puts it after whatever wrapper the
+       page uses, without each page needing its own copy. */
+    if (typeof FUNDING !== "undefined") {
+      const fu = document.createElement("div");
+      fu.className = "bd-fund";
+      fu.innerHTML = fundingHTML();
+      document.body.appendChild(fu);
+      /* keeps the floating pet button clear of the links above */
+      const sp = document.createElement("div");
+      sp.className = "bd-fund-spacer";
+      document.body.appendChild(sp);
+    }
+
     const b = document.createElement("button"); b.className = "bd-fab"; b.setAttribute("aria-label", "Campus Buddy");
     b.onclick = openPanel; document.body.appendChild(b);
     const ov = document.createElement("div"); ov.className = "bd-overlay";
