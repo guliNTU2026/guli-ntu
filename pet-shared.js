@@ -101,6 +101,14 @@
     photo:      { zh: "📸 拍照分享 (+5 🪙)", en: "📸 Photo share (+5 🪙)" },
     frameOn:    { zh: "限定框上線中！", en: "seasonal frame is live!" },
     saved:      { zh: "圖片已下載，快分享吧！", en: "Image downloaded — share away!" },
+    tipsTitle:  { zh: "小知識收集簿", en: "Tips collected" },
+    tipsBtn:    { zh: "📖 小知識", en: "📖 Tips" },
+    tipsCount:  { zh: "已收集 {a} / {b}", en: "{a} of {b} collected" },
+    tipsLocked: { zh: "還沒遇過", en: "Not found yet" },
+    tipsHow:    { zh: "答對題目、每天看看貓咪，就會遇到新的小知識。",
+                  en: "Answer quiz questions and visit the cat each day to find more." },
+    tipsAll:    { zh: "全部收集完成了！🎉", en: "You've collected them all! 🎉" },
+    tipsNew:    { zh: "發現新的小知識！📖", en: "New tip found! 📖" },
   };
 
   /* ==================================================================
@@ -245,6 +253,110 @@
   }
 
   /* ==================================================================
+     小知識 — the collectable tips book.
+     ==================================================================
+     Tips come from two places, and both end up in one book:
+       • TIPS in foods-data.js   — the campaign / event messages
+       • a food's `tip:` line    — facts tied to a particular food
+
+     Which ones a visitor has met is remembered under its own branch of
+     the save, so it survives alongside everything else and is never
+     wiped by the cat or the pet.
+
+     Nothing here expires and nothing is ever lost. The book only fills
+     up — which is the point. It is a reason to come back that cannot
+     turn into a reason to feel behind.
+     ================================================================== */
+
+  /* Every tip that exists, in a single shape the book can draw. */
+  function allTips() {
+    const out = [];
+    if (typeof TIPS !== "undefined") {
+      TIPS.forEach(t => out.push({
+        id: "tip:" + t.id, icon: t.icon || "💡",
+        zh: t.zh, en: t.en, from: null
+      }));
+    }
+    if (typeof FOODS !== "undefined") {
+      FOODS.filter(f => f.tip).forEach(f => out.push({
+        id: "food:" + f.id, icon: f.emoji || "💡",
+        zh: (f.tip.zh || f.tip.en), en: (f.tip.en || f.tip.zh),
+        from: (lang === "zh" ? f.zh : f.en)
+      }));
+    }
+    return out;
+  }
+
+  function seenList() {
+    const d = load();
+    return (d.tips && Array.isArray(d.tips.seen)) ? d.tips.seen : [];
+  }
+
+  /* Record that a tip has been met. Returns true only the FIRST time,
+     so the caller can celebrate a genuinely new one. */
+  function seeTip(id) {
+    if (!id) return false;
+    const d = load();
+    if (!d.tips || !Array.isArray(d.tips.seen)) d.tips = { seen: [] };
+    if (d.tips.seen.indexOf(id) >= 0) return false;
+    d.tips.seen.push(id);
+    save(d);
+    return true;
+  }
+
+  /* Reveal one tip the visitor has not met yet. Used by the cat room,
+     once a day. Returns the tip, or null when the book is complete. */
+  function dropTip() {
+    const seen = seenList();
+    const left = allTips().filter(t => seen.indexOf(t.id) < 0);
+    if (!left.length) return null;
+    /* stable rather than random: the same day always reveals the same
+       one, so reopening the page cannot be used to fish for a different
+       tip, and two devices on the same day agree */
+    const pick = left[Math.floor(Date.now() / 86400000) % left.length];
+    seeTip(pick.id);
+    return pick;
+  }
+
+  function tipsHTML() {
+    const all = allTips(), seen = seenList();
+    const got = all.filter(t => seen.indexOf(t.id) >= 0).length;
+    const rows = all.map(t => {
+      const has = seen.indexOf(t.id) >= 0;
+      if (!has) {
+        return `<div class="bd-tip locked"><span class="bd-tip-i">🔒</span>
+          <span class="bd-tip-t">${tx("tipsLocked")}</span></div>`;
+      }
+      return `<div class="bd-tip"><span class="bd-tip-i">${t.icon}</span>
+        <span class="bd-tip-t">${lang === "zh" ? t.zh : t.en}
+        ${t.from ? `<i>— ${t.from}</i>` : ""}</span></div>`;
+    }).join("");
+
+    return `<div class="bd-h"><h2>📖 ${tx("tipsTitle")}</h2>
+        <button class="bd-x" onclick="window.__bdCloseTips()">✕</button></div>
+      <p class="bd-sub" style="text-align:center;font-weight:800;font-size:15px">
+        ${tx("tipsCount").replace("{a}", got).replace("{b}", all.length)}</p>
+      <div class="bd-tips">${rows}</div>
+      <p class="bd-note">${got >= all.length ? tx("tipsAll") : tx("tipsHow")}</p>`;
+  }
+
+  function openTips() {
+    let ov = $(".bd-tipsov");
+    if (!ov) {
+      ov = document.createElement("div");
+      ov.className = "bd-overlay bd-tipsov";
+      ov.innerHTML = `<div class="bd-panel"></div>`;
+      ov.addEventListener("click", (e) => { if (e.target === ov) ov.classList.remove("on"); });
+      document.body.appendChild(ov);
+    }
+    ov.querySelector(".bd-panel").innerHTML = tipsHTML();
+    ov.classList.add("on");
+  }
+  window.__bdCloseTips = function () {
+    const ov = $(".bd-tipsov"); if (ov) ov.classList.remove("on");
+  };
+
+  /* ==================================================================
      Public API
      ================================================================== */
   const Buddy = {
@@ -270,6 +382,22 @@
 
     coins() { return load().coins; },
     open() { openPanel(); },
+
+    /* ---- 小知識 tips book (see the block above) ---- */
+    openTips() { openTips(); },
+    seeTip(id) { return seeTip(id); },     /* true only the first time */
+    dropTip() { return dropTip(); },       /* reveal one new one */
+    /* The text of one tip, by id — so the cat room can show today's. */
+    tipText(id, l) {
+      if (!id) return null;
+      const t = allTips().find(x => x.id === id);
+      if (!t) return null;
+      return ((l || lang) === "zh" ? t.zh : t.en);
+    },
+    tipStats() {
+      const all = allTips(), seen = seenList();
+      return { total: all.length, seen: all.filter(t => seen.indexOf(t.id) >= 0).length };
+    },
 
     /* ================================================================
        EXTENSION API — added for the cat. Do not delete.
@@ -383,6 +511,14 @@
   .bd-cell .p{font-size:12px;opacity:.75}
   .bd-cell.sel{background:var(--yolk,#F3B72B)}
   .bd-note{font-size:12.5px;opacity:.75;text-align:center;margin-top:12px}
+  .bd-tips{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+  .bd-tip{display:flex;gap:9px;align-items:flex-start;background:var(--card,#fff);
+    border:2px solid var(--ink,#3A3029);border-radius:12px;padding:9px 11px;
+    box-shadow:2px 2px 0 var(--ink,#3A3029)}
+  .bd-tip.locked{opacity:.45;background:transparent;border-style:dashed;box-shadow:none}
+  .bd-tip-i{font-size:19px;line-height:1.3;flex:none}
+  .bd-tip-t{font-size:13.5px;font-weight:700;line-height:1.6}
+  .bd-tip-t i{opacity:.65;font-weight:600;font-size:12px}
   .bd-toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) rotate(-2deg);z-index:1000;
     background:var(--yolk,#F3B72B);border:2.5px solid var(--ink,#3A3029);border-radius:14px;
     box-shadow:3px 3px 0 var(--ink,#3A3029);padding:8px 16px;font-weight:800;font-size:16px;
@@ -503,6 +639,8 @@
         <div class="bd-sub">${next ? xp + " / " + next + " 🍚" : tx("maxed")}</div>
         <button class="bd-btn" onclick="window.__bdFeed()">${tx("feed")}</button>
         <button class="bd-btn bd-ghost" onclick="window.__bdPhoto()">${tx("photo")}</button>
+        <button class="bd-btn bd-ghost" onclick="Buddy.openTips()">${tx("tipsBtn")} ${(function(){
+          const s2 = Buddy.tipStats(); return s2.seen + "/" + s2.total; })()}</button>
         ${(function(){const th=activeTheme();return th?`<div class="bd-sub" style="color:${th.color};font-weight:800;margin-top:6px">🎉 ${lang==="zh"?th.zh:th.en} ${tx("frameOn")}</div>`:"";})()}
         <div class="bd-sub" style="margin-top:8px">🪙 ${d.coins} ${tx("coins")}</div>
       </div>

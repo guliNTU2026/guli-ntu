@@ -461,6 +461,24 @@ const ROOM_WALLS = [
     wall:"#F5DFC4", wallShade:"#EACFAC", skirting:"#C18B57" },
   { id:"wall-redbean", zh:"紅豆紅",   en:"Red bean",     price:55, category:"wall", pattern:"plain",
     wall:"#EBD2CC", wallShade:"#DCBDB5", skirting:"#9E6A5E" },
+
+  /* ---- SEASONAL, and FREE while their holiday is on ----
+     These cost nothing and appear only during their date window, which
+     comes from HOLIDAYS in foods-data.js — the same list that drives the
+     photo frames. That means a seasonal freebie needs NO ARTWORK at all:
+     it is four colour codes. Miss the window and it simply goes back in
+     the cupboard; anyone who claimed it keeps it forever.
+     ✏️ To add one for another holiday, copy a line and change `season`
+     to that holiday's id (midautumn, double10, halloween, christmas,
+     lny, dragonboat, valentine). */
+  { id:"wall-halloween", zh:"萬聖節", en:"Halloween", price:0, category:"wall", season:"halloween",
+    pattern:"stripe", wall:"#3B2F45", wallShade:"#2E2436", skirting:"#E08A33" },
+  { id:"wall-christmas", zh:"聖誕節", en:"Christmas", price:0, category:"wall", season:"christmas",
+    pattern:"check",  wall:"#E4EDE2", wallShade:"#CFE0CD", skirting:"#247A5A" },
+  { id:"wall-lny",       zh:"新年",   en:"Lunar New Year", price:0, category:"wall", season:"lny",
+    pattern:"plain",  wall:"#F0D9D2", wallShade:"#E4C4BA", skirting:"#C0392B" },
+  { id:"wall-midautumn", zh:"中秋",   en:"Mid-Autumn", price:0, category:"wall", season:"midautumn",
+    pattern:"plain",  wall:"#2E3A52", wallShade:"#263145", skirting:"#F3B72B" },
 ];
 
 const ROOM_FLOORS = [
@@ -474,6 +492,12 @@ const ROOM_FLOORS = [
     floor:"#9C8266", floorLine:"#856D54" },
   { id:"floor-millet",    zh:"小米黃",   en:"Millet",       price:40, category:"floor",
     floor:"#E9D49A", floorLine:"#D4BC7F" },
+
+  /* ---- SEASONAL, free while the holiday is on (see the walls above) ---- */
+  { id:"floor-halloween", zh:"萬聖節", en:"Halloween", price:0, category:"floor", season:"halloween",
+    floor:"#6B4A2F", floorLine:"#523823" },
+  { id:"floor-christmas", zh:"聖誕節", en:"Christmas", price:0, category:"floor", season:"christmas",
+    floor:"#C8B39A", floorLine:"#A8927A" },
 ];
 
 

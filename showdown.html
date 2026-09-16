@@ -164,6 +164,20 @@ function toggleLang(){
   render();
 }
 
+/* A small nudge when a tip is met for the first time. The book itself
+   lives in pet-shared.js and is shared with the other app. */
+function toastNewTip(){
+  try{
+    const el=document.createElement("div");
+    el.textContent = (lang==="zh") ? "📖 發現新的小知識！" : "📖 New tip found!";
+    el.style.cssText="position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:1000;"+
+      "background:#fff;border:2.5px solid #3A3029;border-radius:14px;padding:7px 14px;"+
+      "font-weight:800;font-size:14px;box-shadow:3px 3px 0 #3A3029";
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),2200);
+  }catch(e){}
+}
+
 /* ===================== quiz generation ===================== */
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 /* Foods the quiz may use: must have nutrition numbers AND not be hidden
@@ -291,6 +305,13 @@ function playHTML(pickedId){
       ? t("wgWhy")
       : (winnerFood.tip ? (lang==="zh"?winnerFood.tip.zh:winnerFood.tip.en)
         : ((q.a.tip&&(lang==="zh"?q.a.tip.zh:q.a.tip.en)) || (q.b.tip&&(lang==="zh"?q.b.tip.zh:q.b.tip.en)) || ""));
+    /* Record it in the 小知識 collection book (pet-shared.js). Showing a
+       tip is how most people collect them; the food it came from is the
+       id, so the book can say where it was found. */
+    if(window.Buddy && Buddy.seeTip){
+      const src = q.type==="wg" ? null : (winnerFood || q.a || q.b);
+      if(src && src.tip && Buddy.seeTip("food:"+src.id)) toastNewTip();
+    }
     after=`<div class="verdict ${lastCorrect?"good":"bad"}">${lastCorrect?t("right")+" 🪙+2":t("wrong")}</div>
       ${tip?`<div class="tip">💡 ${tip}</div>`:""}
       <button class="bigbtn" onclick="next()">${qi<quiz.length-1?t("next"):t("seeScore")}</button>`;

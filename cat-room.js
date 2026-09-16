@@ -65,11 +65,15 @@ const CatRoom = (function () {
                  en: "Each cat wears its own things — switch cats in the Cats tab." },
     appetite:  { zh: "{n} 隻貓，吃得比較快", en: "{n} cats — the bowl empties faster" },
     tipTitle:  { zh: "今日小知識", en: "Today's tip" },
+    tipsBook:  { zh: "收集簿",     en: "Collection" },
+    newTip:    { zh: "發現新的小知識！📖", en: "New tip found! 📖" },
     share:     { zh: "📸 拍照分享", en: "📸 Share a photo" },
     saved:     { zh: "圖片已下載，快分享吧！", en: "Image saved — share away!" },
     localOnly: { zh: "在自己電腦上直接開檔案時無法存圖，網站上線後就正常了。",
                  en: "Saving the photo doesn't work when opening the file directly — it works fine on the live site." },
     myCats:    { zh: "我的 {n} 隻貓", en: "My {n} cat{s}" },
+    cardStyle: { zh: "卡片樣式", en: "Card style" },
+    seasonal:  { zh: "限定", en: "Limited" },
     tabRoom:   { zh: "房間",       en: "Room" },
     feedWith:  { zh: "餵食",       en: "Feed" },
     bars:      { zh: "格",         en: "bars" },
@@ -147,6 +151,14 @@ const CatRoom = (function () {
   .cr-btn .cr-sub{display:block;font-size:11.5px;font-weight:700;opacity:.8;margin-top:1px}
 
   /* ---------- shop ---------- */
+  .cr-cards{margin-top:9px}
+  .cr-cards-h{font-size:12px;font-weight:800;opacity:.7;margin-bottom:4px}
+  .cr-cards-r{display:flex;gap:6px;overflow-x:auto;padding-bottom:3px}
+  .cr-card{flex:none;border:3px solid;border-radius:10px;font-family:inherit;
+    font-weight:800;font-size:11.5px;padding:6px 10px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.25}
+  .cr-card.on{outline:2.5px solid var(--ink,#3A3029);outline-offset:1px}
+  .cr-card i{font-style:normal;font-size:9px;opacity:.8;font-weight:800}
   .cr-feed{margin-top:10px}
   .cr-feed-h{font-size:13px;font-weight:800;margin-bottom:5px;display:flex;
     justify-content:space-between;align-items:baseline;gap:8px}
@@ -206,7 +218,11 @@ const CatRoom = (function () {
   .cr-tip{margin-top:12px;border:2.5px solid var(--ink,#3A3029);border-radius:14px;
     background:var(--card,#fff);box-shadow:3px 3px 0 var(--ink,#3A3029);padding:11px 13px}
   .cr-tip b{display:block;font-size:12px;opacity:.7;margin-bottom:3px}
-  .cr-tip span{font-size:13.5px;font-weight:700;line-height:1.6}
+  .cr-tip span{font-size:13.5px;font-weight:700;line-height:1.6;display:block}
+  .cr-tipbtn{margin-top:9px;border:2px solid var(--ink,#3A3029);border-radius:10px;
+    background:var(--paper,#FAF5EA);color:var(--ink,#3A3029);font-family:inherit;
+    font-weight:800;font-size:12.5px;padding:5px 11px;cursor:pointer;
+    box-shadow:2px 2px 0 var(--ink,#3A3029)}
   @media (prefers-reduced-motion:reduce){ .cr-cat{animation:none} .cr-pop{animation:none;opacity:0} }
   `;
 
@@ -727,6 +743,7 @@ const CatRoom = (function () {
           ${tx("share")}
         </button>
       </div>
+      ${cardPickerHTML()}
       ${tipHTML()}
       ${shopHTML(cat)}
     </div>`;
@@ -790,15 +807,37 @@ const CatRoom = (function () {
      an easy and genuinely useful job for a nutrition person — no coding.
      ===================================================================== */
   function tipHTML() {
-    if (typeof FOODS === "undefined") return "";
-    const pool = FOODS.filter(f => f.tip && (f.tip.zh || f.tip.en));
-    if (!pool.length) return "";
-    /* same tip all day: pick by the date, not at random, so it does not
-       flicker to a different one every time the panel is reopened */
-    const day = Math.floor(Date.now() / 86400000);
-    const f = pool[day % pool.length];
-    const text = (lang === "zh") ? (f.tip.zh || f.tip.en) : (f.tip.en || f.tip.zh);
-    return `<div class="cr-tip"><b>${tx("tipTitle")} ${f.emoji}</b><span>${text}</span></div>`;
+    if (typeof Buddy === "undefined" || !Buddy.dropTip) return "";
+
+    /* ONE NEW TIP PER DAY.
+       Opening the room on a day you have not opened it before reveals a
+       tip you have not met. That is the whole return mechanic: come
+       back tomorrow, learn one more thing. It cannot be farmed by
+       reloading, and missing a day loses nothing — the tips simply wait. */
+    const today = new Date().toISOString().slice(0, 10);
+    const marker = Buddy.get("catTipDay");
+    let shown = Buddy.get("catTipToday");
+
+    if (marker !== today) {
+      const fresh = Buddy.dropTip();       /* null once the book is full */
+      Buddy.set("catTipDay", today);
+      Buddy.set("catTipToday", fresh ? fresh.id : (shown || null));
+      shown = fresh ? fresh.id : shown;
+      if (fresh) setTimeout(function () { say(tx("newTip")); }, 700);
+    }
+
+    /* Show today's tip, or the most recent one collected if the book is
+       already complete. */
+    const stats = Buddy.tipStats();
+    const all = Buddy.allTipList ? Buddy.allTipList() : null;
+    const text = Buddy.tipText ? Buddy.tipText(shown, lang) : null;
+    if (!text) return "";
+
+    return `<div class="cr-tip">
+      <b>${tx("tipTitle")}</b>
+      <span>${text}</span>
+      <button class="cr-tipbtn" data-act="tips:open">📖 ${tx("tipsBook")} ${stats.seen}/${stats.total}</button>
+    </div>`;
   }
 
   /* =====================================================================
@@ -833,19 +872,43 @@ const CatRoom = (function () {
     ctx.closePath();
   }
 
+  /* The card styles available today: the everyday ones, plus any whose
+     holiday is running. Reuses the same season check as the shop. */
+  function cardStyles() {
+    if (typeof CARD_STYLES === "undefined") return [];
+    return CARD_STYLES.filter(c => CatState.inSeason(c));
+  }
+  function currentStyle() {
+    const list = cardStyles();
+    if (!list.length) return null;
+    const saved = (typeof Buddy !== "undefined" && Buddy.get) ? Buddy.get("cardStyle") : null;
+    return list.find(c => c.id === saved) || list[0];
+  }
+
   async function shareCard() {
     const cat = CatState.load();
+    const style = currentStyle() || { paper: "#FAF5EA", frame: "#F3B72B", ink: "#3A3029", deco: "" };
     const W = 720, H = 900;
     const cv = document.createElement("canvas");
     cv.width = W; cv.height = H;
     const ctx = cv.getContext("2d");
     const FONT = "'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif";
-    const INK = "#3A3029";
+    const INK = style.ink || "#3A3029";
 
-    /* card background + border, matching the site's look */
-    ctx.fillStyle = "#FAF5EA"; ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = "#F3B72B"; ctx.lineWidth = 16;
+    /* card background + border, in the chosen style */
+    ctx.fillStyle = style.paper || "#FAF5EA"; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = style.frame || "#F3B72B"; ctx.lineWidth = 16;
     roundRect(ctx, 22, 22, W - 44, H - 44, 34); ctx.stroke();
+
+    /* the style's decorations, tucked into the corners */
+    const deco = Array.from(style.deco || "");
+    if (deco.length) {
+      ctx.font = "40px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      /* Corners only. A fifth at the bottom centre would sit on top of
+         the app name and date. */
+      [[70, 70], [W - 70, 70], [70, H - 70], [W - 70, H - 70]]
+        .forEach((pos, i) => { if (deco[i % deco.length]) ctx.fillText(deco[i % deco.length], pos[0], pos[1]); });
+    }
 
     /* title */
     ctx.fillStyle = INK; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -942,17 +1005,18 @@ const CatRoom = (function () {
                  W / 2, RY + RH + 62);
 
     const names = CatState.ownedCats(cat).map(c => nm(c)).join(" · ");
-    ctx.font = "400 24px " + FONT; ctx.fillStyle = "rgba(58,48,41,.75)";
-    ctx.fillText(names, W / 2, RY + RH + 104);
+    ctx.font = "400 24px " + FONT; ctx.globalAlpha = .75; ctx.fillStyle = INK;
+    ctx.fillText(names, W / 2, RY + RH + 104); ctx.globalAlpha = 1;
 
     const tag = (typeof SHARE !== "undefined") ? SHARE.hashtag : "";
-    ctx.fillStyle = "#F3B72B"; ctx.font = "900 32px " + FONT;
-    ctx.fillText(tag, W / 2, H - 92);
-    ctx.fillStyle = "rgba(58,48,41,.55)"; ctx.font = "400 20px " + FONT;
+    ctx.fillStyle = style.frame || "#F3B72B"; ctx.font = "900 32px " + FONT;
+    ctx.fillText(tag, W / 2, H - 116);
+    ctx.globalAlpha = .6; ctx.fillStyle = INK; ctx.font = "400 20px " + FONT;
     const app = (typeof SHARE !== "undefined")
       ? (lang === "zh" ? SHARE.appName.zh : SHARE.appName.en) : "Campus Buddy";
     ctx.fillText(app + " · " + new Date().toLocaleDateString(lang === "zh" ? "zh-TW" : "en-US"),
-                 W / 2, H - 56);
+                 W / 2, H - 88);
+    ctx.globalAlpha = 1;
 
     /* ------------------------------------------------------------------
        Turning the canvas into a picture.
@@ -971,6 +1035,22 @@ const CatRoom = (function () {
     } catch (e) {
       return null;
     }
+  }
+
+  /* The row of card styles under the share button. Seasonal ones appear
+     on their own during the holiday and are flagged as limited. */
+  function cardPickerHTML() {
+    const list = cardStyles();
+    if (list.length < 2) return "";
+    const now = currentStyle();
+    return `<div class="cr-cards">
+      <div class="cr-cards-h">${tx("cardStyle")}</div>
+      <div class="cr-cards-r">${list.map(c => `
+        <button class="cr-card ${now && c.id === now.id ? "on" : ""}" data-act="card:${c.id}"
+          style="background:${c.paper};border-color:${c.frame};color:${c.ink}">
+          <span>${nm(c)}</span>
+          ${c.season ? `<i>${tx("seasonal")}</i>` : ""}
+        </button>`).join("")}</div></div>`;
   }
 
   /* Offer the picture to the phone's share sheet, or download it. */
@@ -1012,6 +1092,8 @@ const CatRoom = (function () {
     const parts = act.split(":");
     const kind = parts[0], id = parts[1], extra = parts[2];
 
+    if (kind === "tips")  { Buddy.openTips(); return; }
+    if (kind === "card")  { Buddy.set("cardStyle", id); refresh(); return; }
     if (kind === "share") { sharePhoto(); return; }
 
     if (kind === "feed") {

@@ -324,6 +324,107 @@ const SHARE = {
 
 
 /* ---------------------------------------------------------------
+   PHOTO CARD STYLES — the frames for the shared room picture.
+   ---------------------------------------------------------------
+   The card is drawn in code, so a style is just a few colours and a
+   handful of emoji in the corners. No artwork needed, ever.
+
+   A style with a `season` only appears during that holiday's dates
+   (same HOLIDAYS list as everything else). One without is always there.
+   Everyone gets every style free — these are for expression, not a
+   coin sink.
+
+   ✏️ TO ADD ONE: copy a block, give it a new id, pick colours, choose
+   up to 5 emoji for the corners.
+   --------------------------------------------------------------- */
+const CARD_STYLES = [
+  { id: "plain",   zh: "原色",   en: "Classic",
+    paper: "#FAF5EA", frame: "#F3B72B", ink: "#3A3029", deco: "" },
+  { id: "grain",   zh: "全穀",   en: "Whole grain",
+    paper: "#FBF3E0", frame: "#C8A45C", ink: "#4A3B26", deco: "🌾🍞🌾🍚🌾" },
+  { id: "matcha",  zh: "抹茶",   en: "Matcha",
+    paper: "#F2F6EC", frame: "#247A5A", ink: "#24402F", deco: "🍵🌿🍵🌿" },
+  { id: "peach",   zh: "蜜桃",   en: "Peach",
+    paper: "#FDF0EA", frame: "#ED7848", ink: "#4A2A1E", deco: "🍑🌸🍑🌸" },
+  { id: "night",   zh: "夜貓",   en: "Night cat",
+    paper: "#2C2A38", frame: "#8C7BC4", ink: "#F3EEFF", deco: "🌙⭐🌙⭐" },
+
+  /* seasonal — only offered during their holiday */
+  { id: "halloween", zh: "萬聖節", en: "Halloween", season: "halloween",
+    paper: "#2B2233", frame: "#E08A33", ink: "#F7E9C9", deco: "🎃👻🦇🍬🕸️" },
+  { id: "christmas", zh: "聖誕節", en: "Christmas", season: "christmas",
+    paper: "#F3F7F2", frame: "#247A5A", ink: "#22402F", deco: "🎄❄️🎁❄️🎄" },
+  { id: "lny",       zh: "新年",   en: "Lunar New Year", season: "lny",
+    paper: "#FBEFEA", frame: "#C0392B", ink: "#4A1F19", deco: "🧧🍊🧧🍊" },
+  { id: "midautumn", zh: "中秋",   en: "Mid-Autumn", season: "midautumn",
+    paper: "#232C41", frame: "#F3B72B", ink: "#FBF0D4", deco: "🥮🌕🐇✨" },
+  { id: "valentine", zh: "情人節", en: "Valentine's", season: "valentine",
+    paper: "#FDEFF2", frame: "#E0607E", ink: "#4A2029", deco: "💕🌹💕🌹" },
+];
+
+
+/* ---------------------------------------------------------------
+   小知識 TIPS — the collectable nutrition facts
+   ---------------------------------------------------------------
+   These are the tips that are NOT tied to any one food — the messages
+   from your campaign and your events that do not map neatly onto a
+   quiz question or a pairing. They are collected in the 小知識 book,
+   which both games and the cat room can open.
+
+   Food tips (the `tip:` line on a food, further up) are collected too,
+   and appear in the book alongside these. So there are two places to
+   add educational content, and both end up in the same book.
+
+   HOW PEOPLE COLLECT THEM
+   • answering a 營養大對決 question reveals that food's tip
+   • opening the cat's room on a new day reveals one more
+   Nothing is ever lost, nothing expires, and there is no penalty for
+   collecting slowly. The book simply fills up.
+
+   ✏️ TO ADD ONE: copy a block, give it a new id (any short unique
+   word), and write the two lines. That is the whole job — it appears
+   in the book by itself. This is a perfect task for a nutrition person
+   with no coding background.
+
+   ⚠️ These starters are written in the project's voice (add, never
+   restrict) but they are PLACEHOLDERS — replace them with your own
+   campaign messages and event content.
+   --------------------------------------------------------------- */
+const TIPS = [
+  { id: "wg-half", icon: "🌾",
+    zh: "每天的主食有三分之一換成全穀雜糧類，就是很棒的開始了！",
+    en: "Swapping a third of your daily grains to whole grains is a great start." },
+  { id: "wg-label", icon: "🔍",
+    zh: "包裝上寫「全麥」不一定就是全穀，看成分表第一項是不是全穀類。",
+    en: "\"Whole wheat\" on the front doesn't always mean whole grain — check that a whole grain is first in the ingredients." },
+  { id: "wg-sweetpotato", icon: "🍠",
+    zh: "地瓜、玉米、南瓜都屬於「全穀雜糧類」，不是蔬菜喔！",
+    en: "Sweet potato, corn and pumpkin count as grains, not vegetables." },
+  { id: "na-soup", icon: "🍜",
+    zh: "湯麵的鈉大多在湯裡。麵照吃，少喝幾口湯就差很多。",
+    en: "Most of the sodium in noodle soup is in the broth — eat the noodles, leave some soup." },
+  { id: "na-daily", icon: "🧂",
+    zh: "成人一天建議鈉攝取量是 2400 毫克，大約一茶匙鹽。",
+    en: "The daily sodium guideline for adults is 2400mg — about one teaspoon of salt." },
+  { id: "na-sauce", icon: "🥢",
+    zh: "醬料另外附、沾著吃，比整份淋上去少很多鈉。",
+    en: "Sauce on the side and dipped uses far less than sauce poured over." },
+  { id: "add-veg", icon: "🥬",
+    zh: "外食加一份燙青菜，是最簡單的加分動作。",
+    en: "Adding a side of greens is the simplest upgrade to any meal out." },
+  { id: "add-protein", icon: "🥚",
+    zh: "一顆蛋、一塊豆腐，早餐的蛋白質就夠了。",
+    en: "One egg or a piece of tofu is usually enough protein for breakfast." },
+  { id: "add-calcium", icon: "🥛",
+    zh: "無糖豆漿、鮮奶、優格都是方便的鈣質來源。",
+    en: "Unsweetened soy milk, milk and yoghurt are all easy sources of calcium." },
+  { id: "no-bad-food", icon: "💛",
+    zh: "沒有不能吃的食物。我們想的是「還可以加什麼」，不是「不能吃什麼」。",
+    en: "No food is off-limits. The question is always what you can add, never what you must cut." },
+];
+
+
+/* ---------------------------------------------------------------
    FUNDING STATEMENT — shown prominently on EVERY page.
    ---------------------------------------------------------------
    This is the required funding acknowledgement. It appears in a
