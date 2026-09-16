@@ -65,6 +65,15 @@ const CatRoom = (function () {
                  en: "Each cat wears its own things — switch cats in the Cats tab." },
     appetite:  { zh: "{n} 隻貓，吃得比較快", en: "{n} cats — the bowl empties faster" },
     tipTitle:  { zh: "今日小知識", en: "Today's tip" },
+    share:     { zh: "📸 拍照分享", en: "📸 Share a photo" },
+    saved:     { zh: "圖片已下載，快分享吧！", en: "Image saved — share away!" },
+    localOnly: { zh: "在自己電腦上直接開檔案時無法存圖，網站上線後就正常了。",
+                 en: "Saving the photo doesn't work when opening the file directly — it works fine on the live site." },
+    myCats:    { zh: "我的 {n} 隻貓", en: "My {n} cat{s}" },
+    tabRoom:   { zh: "房間",       en: "Room" },
+    feedWith:  { zh: "餵食",       en: "Feed" },
+    bars:      { zh: "格",         en: "bars" },
+    wasteHint: { zh: "碗裝不下，會浪費 {n} 格", en: "{n} bars would be wasted" },
   };
 
   /* ✏️ EDIT HERE — the little headings inside each shop tab.
@@ -72,6 +81,8 @@ const CatRoom = (function () {
      identical tiles; the headings break it into scannable groups. */
   const GROUPS = {
     bowl:    { zh: "碗",       en: "Bowls" },
+    wall:    { zh: "壁紙",     en: "Wallpaper" },
+    floor:   { zh: "地板",     en: "Flooring" },
     water:   { zh: "水",       en: "Water" },
     bed:     { zh: "床",       en: "Beds" },
     post:    { zh: "貓抓柱",   en: "Scratching posts" },
@@ -132,9 +143,25 @@ const CatRoom = (function () {
     box-shadow:3px 3px 0 var(--ink,#3A3029)}
   .cr-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink,#3A3029)}
   .cr-btn[disabled]{opacity:.45;cursor:not-allowed;box-shadow:2px 2px 0 rgba(58,48,41,.4)}
+  .cr-ghostbtn{background:var(--card,#fff);font-size:14px}
   .cr-btn .cr-sub{display:block;font-size:11.5px;font-weight:700;opacity:.8;margin-top:1px}
 
   /* ---------- shop ---------- */
+  .cr-feed{margin-top:10px}
+  .cr-feed-h{font-size:13px;font-weight:800;margin-bottom:5px;display:flex;
+    justify-content:space-between;align-items:baseline;gap:8px}
+  .cr-feed-h span{font-weight:700;opacity:.7;font-size:11.5px;text-align:right}
+  .cr-foods{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px}
+  .cr-food{border:2.5px solid var(--ink,#3A3029);border-radius:12px;background:var(--card,#fff);
+    color:var(--ink,#3A3029);font-family:inherit;cursor:pointer;padding:7px 4px 6px;
+    box-shadow:2px 2px 0 var(--ink,#3A3029);display:flex;flex-direction:column;gap:1px;align-items:center}
+  .cr-food:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink,#3A3029)}
+  .cr-food[disabled]{opacity:.4;cursor:not-allowed}
+  .cr-food.best{background:var(--yolk,#F3B72B)}
+  .cr-food-n{font-size:14px;font-weight:900;line-height:1.1}
+  .cr-food-nm{font-size:11px;font-weight:700;opacity:.85}
+  .cr-food-p{font-size:11.5px;font-weight:800}
+  .cr-food-w{font-size:9.5px;font-weight:700;color:#B4552C;line-height:1.2}
   .cr-shop{margin-top:16px}
   .cr-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
   .cr-tab{flex:none;border:2.5px solid var(--ink,#3A3029);border-radius:999px;
@@ -154,6 +181,9 @@ const CatRoom = (function () {
   .cr-pic{width:42px;height:42px;image-rendering:pixelated;image-rendering:crisp-edges;
     background-repeat:no-repeat;background-position:center;background-size:contain;flex:none}
   .cr-pic.cr-ghost{border-radius:8px}
+  .cr-swatch{border:2.5px solid;border-radius:7px;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:flex-start}
+  .cr-swatch i{display:block;height:11px;width:100%}
   .cr-nm{font-size:12px;font-weight:800;line-height:1.25}
   .cr-pr{font-size:11.5px;opacity:.8;font-weight:700}
   .cr-group{margin-top:12px}
@@ -162,6 +192,7 @@ const CatRoom = (function () {
   .cr-group h4::after{content:"";flex:1;height:2px;background:rgba(58,48,41,.16);border-radius:2px}
   .cr-note{font-size:12px;opacity:.72;text-align:center;margin-top:12px;line-height:1.6}
   .cr-cat{cursor:pointer}
+  @media (prefers-reduced-motion:reduce){ .cr-cat{transition:none !important} }
   .cr-thing.cr-playable{cursor:pointer}
   /* the little heart that floats up when you pet a cat */
   .cr-pop{position:absolute;transform:translate(-50%,-50%);z-index:400;
@@ -183,8 +214,17 @@ const CatRoom = (function () {
      DRAWING THE ROOM BACKGROUND.
      Either the visitor's own picture, or bands of flat colour.
      ===================================================================== */
-  function roomBackgroundHTML() {
-    const st = (typeof ROOM_STYLE !== "undefined") ? ROOM_STYLE : {};
+  function roomBackgroundHTML(cat) {
+    const base = (typeof ROOM_STYLE !== "undefined") ? ROOM_STYLE : {};
+    /* Start from the defaults, then paint over them with whatever
+       wallpaper and flooring the visitor has bought. */
+    const bought = CatState.decorStyle(cat);
+    const st = Object.assign({}, base);
+    if (bought.wall)  Object.assign(st, { wall: bought.wall.wall,
+      wallShade: bought.wall.wallShade, skirting: bought.wall.skirting,
+      pattern: bought.wall.pattern });
+    if (bought.floor) Object.assign(st, { floor: bought.floor.floor,
+      floorLine: bought.floor.floorLine });
 
     /* If a real background picture has been supplied, use it and stop. */
     if (st.image) {
@@ -194,9 +234,24 @@ const CatRoom = (function () {
 
     const top = st.floorTop || 52;
     let h = "";
-    /* wall, with a slightly darker band up top for a bit of depth */
-    h += `<div class="cr-layer" style="top:0;height:${top}%;background:${st.wall || "#EFE3C8"}"></div>`;
-    h += `<div class="cr-layer" style="top:0;height:${Math.round(top * 0.28)}%;background:${st.wallShade || "#E7D8B8"}"></div>`;
+    /* The wall. A pattern is drawn as repeating HARD-EDGED bands — the
+       colour stops sit on top of each other so there is no soft fade.
+       That keeps it looking printed rather than airbrushed, which is what
+       lets it sit next to pixel art without looking out of place. */
+    const wc = st.wall || "#EFE3C8";
+    const ws = st.wallShade || "#E7D8B8";
+    let pattern = "";
+    if (st.pattern === "stripe") {
+      pattern = `background-image:repeating-linear-gradient(90deg,
+        ${ws} 0 6px, ${wc} 6px 20px);`;
+    } else if (st.pattern === "check") {
+      pattern = `background-image:repeating-linear-gradient(90deg, ${ws} 0 10px, transparent 10px 20px),
+        repeating-linear-gradient(0deg, ${ws} 0 10px, ${wc} 10px 20px);`;
+    }
+    h += `<div class="cr-layer" style="top:0;height:${top}%;background:${wc};${pattern}"></div>`;
+    if (!st.pattern || st.pattern === "plain") {
+      h += `<div class="cr-layer" style="top:0;height:${Math.round(top * 0.28)}%;background:${ws}"></div>`;
+    }
 
     /* a simple window: frame, glass, and one cross bar */
     if (st.window) {
@@ -260,7 +315,7 @@ const CatRoom = (function () {
   function paintRoom(cat) {
     const room = host.querySelector(".cr-room");
     if (!room) return;
-    room.innerHTML = roomBackgroundHTML();
+    room.innerHTML = roomBackgroundHTML(cat);
 
     const roomW = room.getBoundingClientRect().width || 320;
     const catPx = Math.max(24, Math.round(roomW * 0.17));
@@ -458,9 +513,63 @@ const CatRoom = (function () {
     say(tx("purr"));
   }
 
-  /* Play with a toy: the nearest cat CUTS over to it, plays, and cuts
-     back. Cutting rather than walking is the same trick the room already
-     uses between visits — no pathfinding, nothing to go wrong. */
+  /* ---------------------------------------------------------------------
+     WALKING TO SOMETHING.
+
+     Between visits the cats simply appear in new places — nobody is
+     watching, so there is nothing to animate. But moving a cat WHILE
+     someone is looking is different: teleporting across the room reads
+     as a glitch.
+
+     So a tap makes the cat walk. It is a straight slide from A to B
+     (CSS does the moving) with the pack's own walking animation playing
+     during the trip, and the cat facing the way it is going. That is not
+     pathfinding — there is no route to work out, nothing to bump into,
+     and no way for it to get stuck. If the walk frames were ever missing
+     the cat would still slide there, just without its legs moving.
+     --------------------------------------------------------------------- */
+  const WALK_MS = 900;            /* ✏️ how long a trip takes */
+
+  function walkTo(c, x, y, thenPose, holdMs, onArrive) {
+    const fromX = parseFloat(c.el.style.left);
+    const fromY = parseFloat(c.el.style.top);
+    const dx = x - fromX, dy = y - fromY;
+    if (!c.home) c.home = { x: fromX, y: fromY };
+
+    /* face the way we are going: mostly sideways, or up/down if the trip
+       is more vertical than horizontal */
+    let walk = "walk-right";
+    if (Math.abs(dx) < Math.abs(dy) * 0.75) walk = dy > 0 ? "walk-down" : "walk-up";
+    else if (dx < 0) walk = "walk-left";
+
+    /* how long, scaled a little by distance so short hops are quick */
+    const dist = Math.hypot(dx, dy * 0.75);
+    const ms = Math.max(260, Math.round(WALK_MS * Math.min(1, dist / 55)));
+
+    react(c, walk, ms);
+    c.el.style.transition = `left ${ms}ms linear, top ${ms}ms linear`;
+    c.el.style.left = x + "%";
+    c.el.style.top = y + "%";
+
+    clearTimeout(c.arrive);
+    c.arrive = setTimeout(function () {
+      if (!c.el.isConnected) return;
+      c.el.style.transition = "";
+      if (thenPose) react(c, thenPose, holdMs || 2000);
+      if (onArrive) onArrive();
+    }, ms);
+    return ms;
+  }
+
+  /* Send a cat back where it came from, walking again. */
+  function walkHome(c) {
+    if (!c.home || !c.el.isConnected) return;
+    walkTo(c, c.home.x, c.home.y);
+    c.home = null;
+  }
+
+  /* Play with a toy: the nearest cat walks over, plays with it, and
+     walks back to where it was. */
   function playWithToy(x, y) {
     if (!cats.length) return;
     const room = host.querySelector(".cr-room");
@@ -472,18 +581,20 @@ const CatRoom = (function () {
                            (parseFloat(c.el.style.top) - y) * 0.75);
       if (d < bestD) { bestD = d; best = c; }
     });
+    if (best.busy) return;                 /* already on its way */
+    best.busy = true;
 
-    const homeX = best.el.style.left, homeY = best.el.style.top;
-    best.el.style.left = (x + 9) + "%";        /* stand beside it, not on it */
-    best.el.style.top = y + "%";
-    react(best, "play", 3200);
-    pop(room, x, y, "✨");
+    const PLAY_MS = 3000;
+    const trip = walkTo(best, x + 9, y, "play", PLAY_MS, function () {
+      pop(room, x, y, "✨");
+    });
     say(tx("playing"));
 
     clearTimeout(best.goHome);
     best.goHome = setTimeout(function () {
-      if (best.el.isConnected) { best.el.style.left = homeX; best.el.style.top = homeY; }
-    }, 3200);
+      walkHome(best);
+      best.busy = false;
+    }, trip + PLAY_MS);
   }
 
   /* =====================================================================
@@ -492,8 +603,12 @@ const CatRoom = (function () {
   const TABS = [
     { id: "cats",  label: "tabCats", cats: true },
     { id: "furn",  label: "tabFurn", of: ["bowl", "water", "bed", "post", "carrier", "plant"] },
-    { id: "toys",  label: "tabToys", of: ["toy", "food"] },
+    /* NOTE: "food" is deliberately NOT a shop tab. Food is not a thing
+       you own — you buy a tin each time you feed, from the picker under
+       the room, because that is where the choice actually matters. */
+    { id: "toys",  label: "tabToys", of: ["toy"] },
     { id: "acc",   label: "tabAcc",  of: ["collar", "bow", "heart", "hat", "seasonal"] },
+    { id: "room",  label: "tabRoom", of: ["wall", "floor"] },
   ];
   let tab = "cats";
 
@@ -541,10 +656,21 @@ const CatRoom = (function () {
           const label = !owned ? "🪙 " + (i.price || 0)
                        : on ? (wearable ? tx("wearing") : tx("inRoom"))
                        : tx("owned");
-          const file = i.levels ? i.levels[i.levels.length - 1]
-                     : i.frames ? i.frames[0] : i.file;
-          return cell("item:" + i.id, nm(i), label, on, !owned,
-                      `<div class="cr-pic" data-img="${file || ""}"></div>`);
+          /* Wallpaper and flooring have no picture file — they ARE
+             colours, so the tile shows the colours themselves. */
+          let pic;
+          if (i.category === "wall") {
+            pic = `<div class="cr-pic cr-swatch" style="background:${i.wall};
+                     border-color:${i.skirting}"><i style="background:${i.wallShade}"></i></div>`;
+          } else if (i.category === "floor") {
+            pic = `<div class="cr-pic cr-swatch" style="background:${i.floor};
+                     border-color:${i.floorLine}"><i style="background:${i.floorLine};height:3px"></i></div>`;
+          } else {
+            const file = i.levels ? i.levels[i.levels.length - 1]
+                       : i.frames ? i.frames[0] : i.file;
+            pic = `<div class="cr-pic" data-img="${file || ""}"></div>`;
+          }
+          return cell("item:" + i.id, nm(i), label, on, !owned, pic);
         }).join("");
         return `<div class="cr-group"><h4>${heading}</h4>
                   <div class="cr-grid">${tiles}</div></div>`;
@@ -591,18 +717,63 @@ const CatRoom = (function () {
       </div>
       <div class="cr-room"></div>
       <div class="cr-hint">${tx("petHint")}${mouths > 1 ? " · " + tx("appetite").replace("{n}", mouths) : ""}</div>
+      ${foodBarHTML(cat, hasBowl, foodFull, foodLvl)}
       <div class="cr-acts">
-        <button class="cr-btn" data-act="feed:food" ${(!hasBowl || foodFull) ? "disabled" : ""}>
-          🍚 ${hasBowl ? tx("feed") + " −" + BOWL_RULES.feedCost : tx("needBowl")}
-          <span class="cr-sub">${sub(hasBowl, foodFull, "food", foodLvl)}</span>
-        </button>
         <button class="cr-btn" data-act="feed:water" ${(!hasWater || waterFull) ? "disabled" : ""}>
           💧 ${hasWater ? tx("water") + " −" + WATER_RULES.feedCost : tx("needWater")}
           <span class="cr-sub">${sub(hasWater, waterFull, "water", waterLvl)}</span>
         </button>
+        <button class="cr-btn cr-ghostbtn" data-act="share:room" ${mouths ? "" : "disabled"}>
+          ${tx("share")}
+        </button>
       </div>
       ${tipHTML()}
       ${shopHTML(cat)}
+    </div>`;
+  }
+
+  /* =====================================================================
+     THE FOOD PICKER.
+
+     Each tin fills a different number of bars for a different price, and
+     the bigger ones cost less per bar — so the interesting decision is
+     "do I buy the big tin now, or the small one and save?". The tile
+     shows what each one would ACTUALLY add, which is not always what it
+     says on the label: a four-bar feast poured into a bowl with room for
+     two only gives two. We say so plainly rather than letting someone
+     find out after paying.
+     ===================================================================== */
+  function foodBarHTML(cat, hasBowl, foodFull, foodLvl) {
+    if (typeof CAT_FOODS === "undefined" || !CAT_FOODS.length) return "";
+    const coins = (typeof Buddy !== "undefined") ? Buddy.coins() : 0;
+
+    if (!hasBowl) {
+      return `<div class="cr-acts"><button class="cr-btn" disabled>🍚 ${tx("needBowl")}</button></div>`;
+    }
+    if (foodFull) {
+      return `<div class="cr-acts"><button class="cr-btn" disabled>🍚 ${tx("full")}</button></div>`;
+    }
+
+    const tins = CAT_FOODS.map(f => {
+      const e = CatState.foodEffect(cat, f.id);
+      const afford = coins >= e.price;
+      /* the best-value tin that still fits gets a quiet highlight */
+      const perfect = e.wasted === 0 && e.gain > 1;
+      return `<button class="cr-food ${perfect ? "best" : ""}" data-act="feed:food:${f.id}"
+                ${afford ? "" : "disabled"}>
+        <span class="cr-food-n">+${e.gain} ${tx("bars")}</span>
+        <span class="cr-food-nm">${nm(f)}</span>
+        <span class="cr-food-p">🪙 ${e.price}</span>
+        ${e.wasted > 0 ? `<span class="cr-food-w">${tx("wasteHint").replace("{n}", e.wasted)}</span>` : ""}
+      </button>`;
+    }).join("");
+
+    return `<div class="cr-feed">
+      <div class="cr-feed-h">🍚 ${tx("feedWith")} <span>${
+        foodLvl === 0 ? tx("emptyOk")
+          : tx("nextDrop").replace("{h}", CatState.hoursUntilDrop(cat, "food", Date.now()) || 0)
+      }</span></div>
+      <div class="cr-foods">${tins}</div>
     </div>`;
   }
 
@@ -631,6 +802,203 @@ const CatRoom = (function () {
   }
 
   /* =====================================================================
+     SHARE A PHOTO OF THE ROOM.
+
+     Paints the room onto a canvas and hands back a PNG the visitor can
+     post. The room is redrawn with plain rectangles rather than screen-
+     grabbed, because a browser cannot screenshot itself.
+
+     The coins for sharing come from the EXISTING "share" source in
+     pet-shared.js, with its existing daily cap. This is not a new way to
+     earn — that rule stands.
+     ===================================================================== */
+
+  /* Load an image once and remember it, so drawing is instant later. */
+  const loaded = {};
+  function getImage(url) {
+    return new Promise(function (done) {
+      if (loaded[url] !== undefined) { done(loaded[url]); return; }
+      const im = new Image();
+      im.onload  = function () { loaded[url] = im; done(im); };
+      im.onerror = function () { loaded[url] = null; done(null); };
+      im.src = url;
+    });
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);         ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  async function shareCard() {
+    const cat = CatState.load();
+    const W = 720, H = 900;
+    const cv = document.createElement("canvas");
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d");
+    const FONT = "'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif";
+    const INK = "#3A3029";
+
+    /* card background + border, matching the site's look */
+    ctx.fillStyle = "#FAF5EA"; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "#F3B72B"; ctx.lineWidth = 16;
+    roundRect(ctx, 22, 22, W - 44, H - 44, 34); ctx.stroke();
+
+    /* title */
+    ctx.fillStyle = INK; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "900 34px " + FONT;
+    ctx.fillText(tx("title"), W / 2, 100);
+
+    /* ---- the room ---- */
+    const RX = 70, RY = 145, RW = W - 140, RH = Math.round((W - 140) * 0.75);
+    const st = Object.assign({}, (typeof ROOM_STYLE !== "undefined") ? ROOM_STYLE : {});
+    const bought = CatState.decorStyle(cat);
+    if (bought.wall)  Object.assign(st, bought.wall);
+    if (bought.floor) Object.assign(st, bought.floor);
+
+    ctx.save();
+    roundRect(ctx, RX, RY, RW, RH, 18); ctx.clip();
+    const topPct = (st.floorTop || 52) / 100;
+    const floorY = RY + RH * topPct;
+    ctx.fillStyle = st.wall || "#EFE3C8";   ctx.fillRect(RX, RY, RW, RH * topPct);
+    ctx.fillStyle = st.wallShade || "#E7D8B8"; ctx.fillRect(RX, RY, RW, RH * topPct * 0.28);
+    ctx.fillStyle = st.skirting || "#C8A87A";  ctx.fillRect(RX, floorY, RW, RH * 0.035);
+    ctx.fillStyle = st.floor || "#E3CBA1";
+    ctx.fillRect(RX, floorY + RH * 0.035, RW, RH - RH * topPct - RH * 0.035);
+    ctx.fillStyle = st.floorLine || "#C9A87C";
+    for (let i = 1; i <= 3; i++) {
+      const y = floorY + RH * 0.035 + ((RH - RH * topPct - RH * 0.035) * i) / 4;
+      ctx.globalAlpha = .55; ctx.fillRect(RX, y, RW, 2); ctx.globalAlpha = 1;
+    }
+    /* the rug, drawn before anything stands on it — same as on screen */
+    if (st.rug) {
+      ctx.save();
+      ctx.globalAlpha = .55;
+      ctx.fillStyle = st.rugColor || "#E2B9A0";
+      ctx.beginPath();
+      ctx.ellipse(RX + RW * 0.5, RY + RH * 0.80, RW * 0.31, RH * 0.13, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    if (st.window) {
+      ctx.fillStyle = st.windowGlass || "#CFE4E8";
+      ctx.fillRect(RX + RW * 0.62, RY + RH * topPct * 0.18, RW * 0.26, RH * topPct * 0.52);
+      ctx.strokeStyle = st.skirting || "#C8A87A"; ctx.lineWidth = 4;
+      ctx.strokeRect(RX + RW * 0.62, RY + RH * topPct * 0.18, RW * 0.26, RH * topPct * 0.52);
+    }
+
+    /* furniture, decoration, then cats — back to front */
+    const pt = (x, y) => [RX + RW * (x / 100), RY + RH * (y / 100)];
+
+    for (const sp of ROOM_SPOTS) {
+      if (!sp.needs || !cat.placed[sp.needs]) continue;
+      let file = null;
+      if (sp.needs === "bowl")       file = CatState.dishImage(cat, "food");
+      else if (sp.needs === "water") file = CatState.dishImage(cat, "water");
+      else { const it = CatState.item(cat.placed[sp.needs]); file = it && it.file; }
+      if (!file) continue;
+      const im = await getImage("items/" + encodeURIComponent(file));
+      if (!im) continue;
+      const s = RW * 0.18, [x, y] = pt(sp.ix || sp.x, sp.iy || sp.y);
+      ctx.drawImage(im, x - s / 2, y - s / 2, s, s);
+    }
+
+    for (const d of CatState.decorLayout(cat)) {
+      const slot = ROOM_DECOR.find(r => r.needs === d.category) || {};
+      const im = await getImage("items/" + encodeURIComponent(d.file));
+      if (!im) continue;
+      const s = RW * ((slot.size || 16) / 100), [x, y] = pt(d.x, d.y);
+      ctx.drawImage(im, x - s / 2, y - s / 2, s, s);
+    }
+
+    ctx.imageSmoothingEnabled = false;      /* keep pixel art crisp */
+    for (const spot of CatState.arrangeCats(cat)) {
+      const colour = CAT_COLORS.find(c => c.id === spot.colour);
+      if (!colour) continue;
+      const sheet = await getImage(catSheetURL(colour.file));
+      const f = catFrame(spot.pose);
+      const s = RW * 0.17, [x, y] = pt(spot.x, spot.y);
+      if (sheet) {
+        const F = CAT_SHEET.frame;
+        ctx.drawImage(sheet, f.from * F, f.row * F, F, F, x - s / 2, y - s / 2, s, s);
+      } else {
+        /* no artwork yet — a plain marker, so the card still works */
+        ctx.fillStyle = dotColour(colour.id);
+        ctx.beginPath(); ctx.arc(x, y, s / 2.4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.restore();
+    ctx.imageSmoothingEnabled = true;
+    ctx.strokeStyle = INK; ctx.lineWidth = 5;
+    roundRect(ctx, RX, RY, RW, RH, 18); ctx.stroke();
+
+    /* ---- caption ---- */
+    const n = CatState.catCount(cat);
+    ctx.fillStyle = INK; ctx.font = "900 36px " + FONT;
+    ctx.fillText(tx("myCats").replace("{n}", n).replace("{s}", n === 1 ? "" : "s"),
+                 W / 2, RY + RH + 62);
+
+    const names = CatState.ownedCats(cat).map(c => nm(c)).join(" · ");
+    ctx.font = "400 24px " + FONT; ctx.fillStyle = "rgba(58,48,41,.75)";
+    ctx.fillText(names, W / 2, RY + RH + 104);
+
+    const tag = (typeof SHARE !== "undefined") ? SHARE.hashtag : "";
+    ctx.fillStyle = "#F3B72B"; ctx.font = "900 32px " + FONT;
+    ctx.fillText(tag, W / 2, H - 92);
+    ctx.fillStyle = "rgba(58,48,41,.55)"; ctx.font = "400 20px " + FONT;
+    const app = (typeof SHARE !== "undefined")
+      ? (lang === "zh" ? SHARE.appName.zh : SHARE.appName.en) : "Campus Buddy";
+    ctx.fillText(app + " · " + new Date().toLocaleDateString(lang === "zh" ? "zh-TW" : "en-US"),
+                 W / 2, H - 56);
+
+    /* ------------------------------------------------------------------
+       Turning the canvas into a picture.
+
+       A browser refuses to export a canvas that has had images drawn
+       into it from a DIFFERENT origin — it calls the canvas "tainted".
+       Opening these files straight off the disk (file://) counts as
+       different for every image, so this throws locally even though it
+       is perfectly fine once the site is served from a web address.
+
+       So: catch it, say plainly what happened, and carry on. Never let
+       it surface as an unexplained error.
+       ------------------------------------------------------------------ */
+    try {
+      return cv.toDataURL("image/png");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* Offer the picture to the phone's share sheet, or download it. */
+  async function sharePhoto() {
+    let url = null;
+    try {
+      url = await shareCard();
+    } catch (e) {
+      url = null;
+    }
+    if (!url) { say(tx("localOnly")); return; }
+    try {
+      const blob = await (await fetch(url)).blob();
+      const file = new File([blob], "my-cat-room.png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        const a = document.createElement("a");
+        a.href = url; a.download = "my-cat-room.png"; a.click();
+        say(tx("saved"));
+      }
+      /* the EXISTING share reward, with its existing daily cap */
+      if (typeof Buddy !== "undefined" && Buddy.addCoins) Buddy.addCoins("share");
+      refresh();
+    } catch (e) { /* the visitor closed the share sheet — nothing to do */ }
+  }
+
+  /* =====================================================================
      TAPS. One listener for the whole panel, reading data-act, rather
      than a separate handler on every button.
      ===================================================================== */
@@ -641,10 +1009,13 @@ const CatRoom = (function () {
     const btn = e.target.closest("[data-act]");
     if (!btn) return;
     const act = btn.getAttribute("data-act");
-    const [kind, id] = act.split(":");
+    const parts = act.split(":");
+    const kind = parts[0], id = parts[1], extra = parts[2];
+
+    if (kind === "share") { sharePhoto(); return; }
 
     if (kind === "feed") {
-      const r = CatState.feed(id);
+      const r = CatState.feed(id, undefined, extra);
       if (r.ok) say(id === "water" ? tx("fresh") : tx("yum"));
       else if (r.reason === "broke") say(tx("noCoins"));
       else if (r.reason === "full") say(tx("full"));

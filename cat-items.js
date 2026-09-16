@@ -132,10 +132,34 @@ const BOWL_RULES = {
    Keep 2-3 foods; 5 is more than needed.
    ===================================================================== */
 const CAT_FOODS = [
-  { id:"food-everyday", zh:"日常飼料", en:"Everyday food", price:5, file:"brown_food.png", category:"food" },
-  { id:"food-premium",  zh:"高級餐",   en:"Premium meal",  price:8, file:"pink_food.png",  category:"food" },
-  { id:"food-treat",    zh:"特別零食", en:"Special treat", price:8, file:"orange_food.png",category:"food" },
+  /* fills = how many bars of the bowl this food adds.
+     The bigger tins cost more but LESS PER BAR, so saving up is the
+     better deal. That is the point: it rewards playing a couple of extra
+     quiz rounds instead of feeding one bar at a time.
+
+        日常飼料  5 coins  -> 1 bar    5.0 per bar
+        高級餐    9 coins  -> 2 bars   4.5 per bar
+        特別零食 12 coins  -> 3 bars   4.0 per bar
+        豪華大餐 14 coins  -> 4 bars   3.5 per bar   (fills an empty bowl)
+
+     ⚠️ A bowl only holds BOWL_RULES.maxLevel bars. Feeding a 4-bar meal
+     into a half-full bowl still costs the full price and the extra is
+     simply lost, so the app shows what each one will actually add and
+     nudges toward the one that fits. Nothing is ever blocked — it is a
+     mild choice, never a punishment.
+
+     ✏️ To add another tier: copy a line, give it a new id, set fills and
+     price, and point file: at a PNG in items/.
+     ⚠️ The 4-bar one below reuses brown_food.png as a placeholder, since
+     only three food pictures were listed. Give it its own file when you
+     have one. */
+  { id:"food-everyday", zh:"日常飼料", en:"Everyday food", price:5,  fills:1, file:"brown_food.png",  category:"food" },
+  { id:"food-premium",  zh:"高級餐",   en:"Premium meal",  price:9,  fills:2, file:"pink_food.png",   category:"food" },
+  { id:"food-treat",    zh:"特別零食", en:"Special treat", price:12, fills:3, file:"orange_food.png", category:"food" },
+  { id:"food-feast",    zh:"豪華大餐", en:"Big feast",     price:14, fills:4, file:"brown_food.png",  category:"food" },
 ];
+
+
 const CAT_WATER = [
   { id:"water", zh:"清水", en:"Fresh water", price:5, file:"water_bottle.png", category:"water" },
 ];
@@ -404,6 +428,52 @@ const ROOM_DECOR = [
   { needs:"carrier", x:6,  y:56, size:16 },   /* cat carrier */
   { needs:"toy",     x:50, y:96, size:9  },   /* mouse, bee, ball... */
   { needs:"plant",   x:96, y:96, size:15 },   /* potted plant */
+];
+
+
+/* =====================================================================
+   WALLPAPER & FLOORING — bought with coins, drawn with colour.
+   =====================================================================
+   These need NO artwork. The room is painted from flat colour bands, so
+   a new wallpaper is just a few colour codes — which means you can add
+   one in a minute without commissioning anything.
+
+   They are named after whole grains and everyday foods on purpose, so
+   even the decorating stays on theme.
+
+   Each wall may have a pattern: "plain", "stripe" or "check". Those are
+   drawn with hard-edged repeating bands — no soft gradients — so they
+   sit properly next to 32x32 pixel art instead of looking airbrushed.
+
+   ✏️ TO ADD ONE: copy a block, give it a new id, pick colours with any
+   colour picker, set a price. It appears in the shop by itself.
+   ===================================================================== */
+const ROOM_WALLS = [
+  { id:"wall-oat",     zh:"燕麥米白", en:"Oat",          price:0,  category:"wall", pattern:"plain",
+    wall:"#F1E6CF", wallShade:"#E6D5B2", skirting:"#B39061" },
+  { id:"wall-soymilk", zh:"豆漿白",   en:"Soy milk",     price:35, category:"wall", pattern:"stripe",
+    wall:"#F6F0E2", wallShade:"#EBE2CE", skirting:"#C2AE86" },
+  { id:"wall-matcha",  zh:"抹茶綠",   en:"Matcha",       price:45, category:"wall", pattern:"plain",
+    wall:"#DCE6CE", wallShade:"#CBD9B6", skirting:"#7E9463" },
+  { id:"wall-purple",  zh:"紫米紫",   en:"Purple rice",  price:45, category:"wall", pattern:"check",
+    wall:"#DED5E4", wallShade:"#CEC2D8", skirting:"#8A7796" },
+  { id:"wall-sweetpo", zh:"地瓜橘",   en:"Sweet potato", price:45, category:"wall", pattern:"stripe",
+    wall:"#F5DFC4", wallShade:"#EACFAC", skirting:"#C18B57" },
+  { id:"wall-redbean", zh:"紅豆紅",   en:"Red bean",     price:55, category:"wall", pattern:"plain",
+    wall:"#EBD2CC", wallShade:"#DCBDB5", skirting:"#9E6A5E" },
+];
+
+const ROOM_FLOORS = [
+  { id:"floor-brownrice", zh:"糙米棕",   en:"Brown rice",   price:0,  category:"floor",
+    floor:"#D8B98A", floorLine:"#C3A075" },
+  { id:"floor-oatmilk",   zh:"燕麥奶",   en:"Oat milk",     price:35, category:"floor",
+    floor:"#E8DCC2", floorLine:"#D2C3A3" },
+  { id:"floor-buckwheat", zh:"蕎麥灰",   en:"Buckwheat",    price:40, category:"floor",
+    floor:"#C9C2B4", floorLine:"#B0A899" },
+  { id:"floor-blackrice", zh:"黑米深棕", en:"Black rice",   price:50, category:"floor",
+    floor:"#9C8266", floorLine:"#856D54" },
+  { id:"floor-millet",    zh:"小米黃",   en:"Millet",       price:40, category:"floor",
+    floor:"#E9D49A", floorLine:"#D4BC7F" },
 ];
 
 

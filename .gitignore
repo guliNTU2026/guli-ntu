@@ -4,6 +4,8 @@ funding.png
 room.png
 lab*.png
 testsheet.png
+# temporary fake sprite sheets used while testing — never commit these
+sprites/cat ?*.png.test
 *.log
 
 # Editor / OS clutter

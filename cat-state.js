@@ -260,7 +260,7 @@ const CatState = (function () {
          { ok:false, reason:"full",   level:4 }    already full
          { ok:false, reason:"broke",  need:5 }     not enough coins
        ---------------------------------------------------------------- */
-    feed(dish, now) {
+    feed(dish, now, foodId) {
       dish = (dish === "water") ? "water" : "food";
       now  = now || Date.now();
       const rules = rulesFor(dish);
@@ -278,21 +278,35 @@ const CatState = (function () {
         return { ok: false, reason: "full", dish: dish, level: cat.dishes[dish].level };
       }
 
+      /* WHICH FOOD? For the bowl the visitor picks a tin, and each tin
+         has its own price and its own number of bars. With none given
+         (or for water) we fall back to the plain rules in cat-items.js. */
+      let cost = rules.feedCost;
+      let step = rules.feedStep;
+      if (dish === "food" && foodId) {
+        const food = this.item(foodId);
+        if (!food || food.category !== "food") return { ok: false, reason: "unknown-food" };
+        cost = food.price || 0;
+        step = food.fills || 1;
+      }
+
       /* Try to pay. Buddy.spend returns false and changes nothing if they
          cannot afford it, so the order here is safe: we never raise the
          level unless the coins actually left. */
-      const cost = rules.feedCost;
       if (typeof Buddy === "undefined" || !Buddy.spend || !Buddy.spend(cost)) {
         return { ok: false, reason: "broke", dish: dish, need: cost };
       }
 
-      cat.dishes[dish].level = Math.min(rules.maxLevel, cat.dishes[dish].level + rules.feedStep);
+      const before = cat.dishes[dish].level;
+      cat.dishes[dish].level = Math.min(rules.maxLevel, before + step);
       /* Restart the clock, so a top-up always buys a full fresh period.
          Slightly generous on purpose — this is meant to feel kind. */
       cat.dishes[dish].since = now;
       writeRaw(cat);
 
-      return { ok: true, dish: dish, level: cat.dishes[dish].level, spent: cost };
+      return { ok: true, dish: dish, level: cat.dishes[dish].level, spent: cost,
+               gained: cat.dishes[dish].level - before,   /* bars actually added */
+               wasted: step - (cat.dishes[dish].level - before) };
     },
 
     /* ----------------------------------------------------------------
@@ -671,6 +685,8 @@ const CatState = (function () {
        bought a Christmas hat in December still owns it in March. */
     allItems() {
       const groups = [
+        typeof ROOM_WALLS      !== "undefined" ? ROOM_WALLS      : [],
+        typeof ROOM_FLOORS     !== "undefined" ? ROOM_FLOORS     : [],
         typeof CAT_BOWLS       !== "undefined" ? CAT_BOWLS       : [],
         typeof CAT_FOODS       !== "undefined" ? CAT_FOODS       : [],
         typeof CAT_WATER       !== "undefined" ? CAT_WATER       : [],
@@ -719,6 +735,33 @@ const CatState = (function () {
     /* Everything currently purchasable, seasons applied. */
     catalogue(when) {
       return this.allItems().filter(i => CatState.inSeason(i, when));
+    },
+
+    /* The wallpaper and flooring currently up, falling back to the free
+       first entry in each list so a brand-new room still looks finished. */
+    decorStyle(cat) {
+      const pick = (list, placedId) => {
+        if (typeof list === "undefined" || !list.length) return null;
+        return list.find(x => x.id === placedId) || list[0];
+      };
+      return {
+        wall:  pick(typeof ROOM_WALLS  !== "undefined" ? ROOM_WALLS  : [], cat && cat.placed && cat.placed.wall),
+        floor: pick(typeof ROOM_FLOORS !== "undefined" ? ROOM_FLOORS : [], cat && cat.placed && cat.placed.floor),
+      };
+    },
+
+    /* What a given food would actually add to the bowl right now, after
+       the bowl's own ceiling. Lets the shop say "+2" honestly rather than
+       promising four bars into a bowl that only has room for two. */
+    foodEffect(cat, foodId) {
+      const food = this.item(foodId);
+      if (!food) return null;
+      const max = (typeof BOWL_RULES !== "undefined") ? BOWL_RULES.maxLevel : 4;
+      const now = cat ? cat.dishes.food.level : 0;
+      const fills = food.fills || 1;
+      const gain = Math.min(max, now + fills) - now;
+      return { fills: fills, gain: gain, wasted: fills - gain,
+               price: food.price || 0, room: max - now };
     },
 
     /* How many real hours one level of this dish currently lasts, with
