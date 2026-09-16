@@ -346,6 +346,20 @@ const HOLIDAYS = [
     msg: { zh: "新年快樂！年菜加點糙米雜糧，五穀豐收好兆頭 🧧", en: "Happy Lunar New Year! Whole grains in the feast for good fortune 🧧" },
     ranges: [["2027-02-04", "2027-02-14"]] },   /* ⚠️ lunar — verify & add dates yearly */
 
+  /* ⚠️ HEADS UP — this one can collide with 春節 above.
+     activeTheme() uses the FIRST holiday in this list whose dates match
+     today, so whichever block sits HIGHER wins on an overlapping day.
+     春節 is placed above on purpose: in Taiwan it should win. In 2027 the
+     Lunar New Year range runs 02-04 to 02-14, which swallows most of the
+     Valentine's window that year — so in 2027 the heart frame will only
+     show on 02-15.
+     Want Valentine's to win instead? Move this whole block ABOVE the
+     春節 block. Nothing else needs changing. */
+  { id: "valentine", zh: "情人節", en: "Valentine's Day", deco: "💕🌹🍫", color: "#ED7848",
+    msg: { zh: "情人節快樂！約會吃大餐，再配杯無糖茶或加份蔬菜就更棒了 💕",
+           en: "Happy Valentine's Day! Big date-night meal? A side of veg or unsweetened tea rounds it out 💕" },
+    ranges: [["02-10", "02-15"]] },            /* fixed — repeats every year automatically */
+
   { id: "dragonboat", zh: "端午節", en: "Dragon Boat Festival", deco: "🐉🛶🌾", color: "#247A5A",
     msg: { zh: "端午安康！今年試試紫米粽或五穀粽 🛶", en: "Happy Dragon Boat Festival! Try a purple-rice or multigrain zongzi 🛶" },
     ranges: [["2027-06-06", "2027-06-10"]] },   /* ⚠️ lunar — verify & add dates yearly */

@@ -54,16 +54,55 @@ const CAT_BOWLS = [
     levels:["purple_bowl_0.png","purple_bowl_1.png","purple_bowl_2.png","purple_bowl_3.png","purple_bowl_4.png"] },
 ];
 
-/* FEED / DECAY timing — how the bowl level changes. No live draining while
-   someone is playing; it only drops based on time BETWEEN visits.
-   ✏️ tune these freely. */
+/* =====================================================================
+   FEED / DECAY timing — the feeding loop. ✏️ tune these freely.
+   ---------------------------------------------------------------------
+   HOW IT WORKS
+   The bowl has 5 fill levels, 0 (empty) to 4 (full). Tapping Feed costs
+   coins and raises it. Time passing lowers it. Nothing drains while
+   someone is actually playing — the level is worked out once, on load,
+   from how long they were away. So the bowl never empties in front of
+   them; they just come back to a lower bowl.
+
+   WHY THESE NUMBERS (the coin maths — worth understanding before you
+   change them)
+   At decayHours 12, the bowl drops 2 levels a day, so keeping it full
+   costs 2 x 5 = 10 coins a day. The daily check-in bonus is also
+   exactly 10 coins. That is deliberate:
+     • someone who only opens the app breaks even and can always feed
+     • anyone who answers a quiz or builds a meal earns MORE than the cat
+       consumes, so there is always surplus left over for furniture
+   The cat is therefore a reason to play, never a treadmill you can fall
+   behind on.
+     • want it slower / gentler?  raise decayHours (24 = half the cost)
+     • want it to matter more?    lower decayHours or raise feedCost
+   Changing one number here is safe; nothing else needs touching.
+   ===================================================================== */
 const BOWL_RULES = {
   feedStep:   1,    // levels the bowl rises per "feed" tap
   feedCost:   5,    // coins per feed tap
   decayHours: 12,   // real hours that pass to drop the bowl by 1 level
   maxLevel:   4,    // top level (matches the last file in "levels")
-  // NOTE (philosophy): an empty bowl has NO penalty — no hunger, no sad
-  // cat. Feeding is a friendly "hello", not a chore. Keep it that way.
+
+  /* ===================================================================
+     🚫 PHILOSOPHY — THE LINE THAT MUST NOT BE CROSSED
+     Feeding COSTS COINS. That part is intentional: it gives the coins a
+     purpose and gives people a reason to come back and play the games.
+     An empty bowl, however, costs the user NOTHING.
+
+     Specifically, an empty bowl must never cause:
+       • a sad, sick, hungry or angry cat
+       • lost coins, lost progress, or a lost streak
+       • a nagging message, a red badge, or a reminder
+       • the cat leaving, or refusing to be petted
+
+     The cat is always pleased to see you. The bowl is an opportunity to
+     do something nice, never a debt you owe. This mirrors the whole
+     project: food-neutral, addition-based, never guilt-based. A future
+     maintainer adding "the cat is sad because you didn't feed it" would
+     be contradicting the health message printed inches away in the same
+     app. Please do not.
+     =================================================================== */
 };
 
 
@@ -123,8 +162,14 @@ const CAT_PLANTS = [
 /* =====================================================================
    ACCESSORIES worn on the cat. Some are ANIMATED (bows, hearts, wings):
    for those, list frames in "frames" (in order) instead of a single
-   "file". Seasonal ones use "season" to appear only in their holiday
-   window (matches a holiday id in foods-data.js: "christmas","valentine").
+   "file".
+
+   An item with a "season" appears ONLY during that holiday's date window.
+   The word must match a holiday id in HOLIDAYS in foods-data.js — right
+   now those are: midautumn, double10, halloween, christmas, lny,
+   dragonboat, valentine. An item with NO "season" is on sale all year.
+   (Misspell the season and the item simply never shows up — that is the
+   usual cause of "my item disappeared".)
    ===================================================================== */
 const CAT_ACCESSORIES = [
   /* collars (static) */
@@ -145,12 +190,17 @@ const CAT_ACCESSORIES = [
   { id:"bow-pinktop",zh:"粉色頭頂結", en:"Pink top bow", price:20, category:"bow",
     frames:["pinktop_bow_0.png","pinktop_bow_1.png"] },
 
-  /* hearts — ANIMATED, Valentine's only */
-  { id:"heart-yellow", zh:"黃愛心", en:"Yellow heart", price:0, category:"seasonal", season:"valentine",
+  /* hearts — ANIMATED, available ALL YEAR ROUND.
+     These used to be Valentine's-only. They are now ordinary shop items
+     on sale every day, priced to match the bows. (Valentine's still
+     exists as a holiday — it now drives the seasonal PHOTO FRAME instead,
+     see the "valentine" entry in HOLIDAYS in foods-data.js.)
+     To make them seasonal again: add  season:"valentine",  to each line. */
+  { id:"heart-yellow", zh:"黃愛心", en:"Yellow heart", price:20, category:"heart",
     frames:["yellow_heart_0.png","yellow_heart_1.png"] },
-  { id:"heart-red",    zh:"紅愛心", en:"Red heart",    price:0, category:"seasonal", season:"valentine",
+  { id:"heart-red",    zh:"紅愛心", en:"Red heart",    price:20, category:"heart",
     frames:["red_heart_0.png","red_heart_1.png"] },
-  { id:"heart-pink",   zh:"粉愛心", en:"Pink heart",   price:0, category:"seasonal", season:"valentine",
+  { id:"heart-pink",   zh:"粉愛心", en:"Pink heart",   price:20, category:"heart",
     frames:["pink_heart_0.png","pink_heart_1.png"] },
 
   /* christmas — static (antlers/hats). Free during the season. */

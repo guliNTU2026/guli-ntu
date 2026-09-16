@@ -17,6 +17,12 @@
    3. SHOP — accessories and prices
    4. FEED_COST / STAGE_XP — how fast pets grow
    Everything else can be left alone.
+
+   NOTE: the pixel-art cat lives in its own files (cat-items.js,
+   cat-frames.js, cat-state.js) and talks to this one through the
+   three small doors near "EXTENSION API" below. The emoji pet in this
+   file is untouched and still works — existing visitors keep their
+   saved buddy.
    ===================================================================== */
 
 (function () {
@@ -264,6 +270,58 @@
 
     coins() { return load().coins; },
     open() { openPanel(); },
+
+    /* ================================================================
+       EXTENSION API — added for the cat. Do not delete.
+       ----------------------------------------------------------------
+       WHY THIS EXISTS (plain English)
+       Everything about a visitor — coins, pets, daily caps — lives in
+       ONE saved record in their browser. This file owns that record.
+       The cat needs to read and write a little of it too (which cat is
+       adopted, what is bought, how full the bowl is).
+
+       Letting two files write to the same saved record independently is
+       how saves get corrupted: both read it, both change their own bit,
+       both write the whole thing back, and whoever writes last silently
+       erases the other one's change.
+
+       So instead, this file stays the ONLY writer, and hands out these
+       three doors. cat-state.js goes through them and never touches
+       localStorage itself.
+       ================================================================ */
+
+    /* Try to spend coins. Returns true if they could afford it (and the
+       coins are now gone), false if they could not (and nothing changed).
+       Always check the answer:  if (Buddy.spend(5)) { ...it worked... } */
+    spend(n) {
+      n = Math.max(0, Math.round(n || 0));
+      const d = load();
+      if (d.coins < n) return false;
+      d.coins -= n;
+      save(d); render();
+      return true;
+    },
+
+    /* Read one named branch of the saved record, e.g. Buddy.get("cat").
+       Returns null if nothing has been saved under that name yet.
+       You get a COPY, so scribbling on it changes nothing until you
+       hand it back with Buddy.set(). */
+    get(branch) {
+      const d = load();
+      if (d[branch] === undefined || d[branch] === null) return null;
+      try { return JSON.parse(JSON.stringify(d[branch])); }
+      catch (e) { return null; }
+    },
+
+    /* Write one named branch back, e.g. Buddy.set("cat", myCatData).
+       Only that branch is touched — coins, daily caps and the old emoji
+       pet are all left exactly as they were. */
+    set(branch, value) {
+      const d = load();
+      d[branch] = value;
+      save(d); render();
+      return true;
+    },
     /* Fire a one-off analytics event, e.g. Buddy.track("cookbook-download").
        Silent no-op if GoatCounter isn't configured. */
     track(name) {

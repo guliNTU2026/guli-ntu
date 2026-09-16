@@ -20,10 +20,11 @@ Nothing goes live until you are happy.
 | Step | What it does | Status |
 |---|---|---|
 | 1 | Show one pixel-art frame on screen; set up the editable animation list | ✅ **done — test it now** |
-| 2 | The cat animates in place; four colours to adopt | ⏳ waiting on you |
-| 3 | The room, the shop, the furniture | ⏳ |
+| 1.5 | The feeding loop + seasonal items wiring | ✅ **done — test it now** |
+| 2 | The cat animates in place; four colours to adopt | ⏳ needs `cat-frames.js` filled in |
+| 3 | The room, the shop, the furniture | ⏳ needs the item PNGs uploaded |
 | 4 | "The cat moved while you were away" | ⏳ |
-| 5 | Seasonal hats and hearts | ⏳ |
+| 5 | Seasonal photo frame for Valentine's | ⏳ (holiday itself is already added) |
 
 ---
 
@@ -114,10 +115,10 @@ is just less lively. You can come back and finish later.
 > cat** (about row 43). The workbench shades them orange. We are deliberately
 > not using them — see "Why there is no sad cat" below.
 
-### 3. Answer three questions for me
+### 3. Send me the artist's details
 
-They are at the bottom of this file. I cannot build Steps 3 and 5 correctly
-without them.
+The artist's **name**, the **pack name**, and the **download link** — so I can
+finish `CREDITS.md` and add a proper credit line to the FAQ page.
 
 ---
 
@@ -145,44 +146,100 @@ someone would be tempted to add those rows.
 
 ---
 
-## What I need you to decide (3 questions)
+## Your three decisions — now built
 
-**Q1 — The bowl. Your instructions contradict each other.**
+### 1. The feeding loop: ✅ built, coins required, no sadness
 
-Your handoff says both of these:
+Feeding **costs coins**, exactly as you wanted, so the cat gives the coins a
+purpose and gives people a reason to come back and play the games. The bowl
+empties over time. But an empty bowl costs the user **nothing at all** — no sad
+cat, no hungry cat, no lost progress, no nagging.
 
-> *(Step 3b)* "each bowl has a `levels:` array … Feeding raises the level …
-> time between visits lowers it by 1 level per `decayHours`"
+**The numbers, and why they are what they are.** This is worth reading, because
+it is the one place where "slow stakes" is actually decided:
 
-> *(Hard constraints)* "**No feeding loop.** The bowl is static décor … it does
-> not drain or need refilling."
+| | |
+|---|---|
+| Feeding costs | **5 coins**, raises the bowl one level |
+| Bowl drops a level every | **12 hours** |
+| A full bowl lasts | **48 hours** (2 days) from full to empty |
+| Keeping it permanently full costs | **10 coins a day** |
+| The daily check-in gives | **10 coins a day** |
 
-Those cannot both be built. Your `cat-items.js` contains a full `BOWL_RULES`
-block with `feedStep`, `feedCost` and `decayHours`, so my assumption is that
-the "static décor" line is left over from an older draft and **the levelled
-bowl is what you want**. Either is genuinely fine and neither breaks the
-no-guilt rule. Just confirm which.
+That last pair is the whole design. Someone who does nothing but open the app
+breaks even and can always afford to feed. Anyone who answers a quiz question
+or builds a meal earns *more* than the cat consumes, so there is always
+surplus left over for furniture. **The cat is a reason to play; it can never
+become a treadmill you fall behind on.**
 
-**Q2 — Valentine's Day does not exist yet.**
+Want it gentler? Change `decayHours` to `24` in `cat-items.js` and the cost
+halves to 5 coins a day. Want it to bite more? Lower it. It is one number and
+nothing else needs touching.
 
-`cat-items.js` has three heart accessories set to `season:"valentine"`, but the
-`HOLIDAYS` list in `foods-data.js` contains only: `midautumn`, `double10`,
-`halloween`, `christmas`, `lny`, `dragonboat`. There is **no `valentine`**, so
-those hearts would never appear.
+### 2. Hearts: ✅ on sale all year, **and** Valentine's added — you get both
 
-The fix is four lines added to `HOLIDAYS` — which also gives you a Valentine's
-photo frame for free, since the seasonal frames read the same list. I need a
-Chinese and English greeting line in your project's voice. Something like
-*"情人節快樂！和喜歡的人一起吃頓均衡的飯 💕"* — but your wording will be better
-than mine.
+- The three hearts are now ordinary shop items, available every day, priced at
+  20 coins to match the bows. (They were free before only because they were
+  seasonal.)
+- `valentine` is now a real holiday in `foods-data.js`, running **10–15
+  February every year**, which gives you the Valentine's photo frame you
+  wanted — the frames and the seasonal items read the same list, so adding the
+  holiday once did both jobs.
 
-**Q3 — The licence.**
+**One thing to know:** holidays are checked top to bottom and the first match
+wins. In **2027 only**, the Lunar New Year range runs 4–14 February and
+overlaps Valentine's. I put 春節 first, because in Taiwan it should win — so in
+2027 the heart frame will only appear on 15 February. If you would rather
+Valentine's take priority, move that block above the 春節 block in
+`foods-data.js`; there is a comment there explaining exactly how.
 
-The licence section of the inventory template was left blank. Please paste the
-sprite pack's usage terms — even just the one sentence about commercial use and
-credit. This is a public-health project on a public website, so it is worth
-being certain before the artwork goes live. If the pack requires a credit line,
-tell me and I will add it to the FAQ page.
+You may also want to **check the Valentine's greeting I drafted** — I wrote it
+food-neutral ("add a side of veg" rather than "don't eat the big meal"), but
+your wording will be better than mine:
+
+> 情人節快樂！約會吃大餐，再配杯無糖茶或加份蔬菜就更棒了 💕
+
+### 3. Licence: ✅ recorded — and it is fine
+
+"Personal and commercial use allowed; no redistributing or reselling
+separately" **permits exactly what we are doing.** Using the art on your
+website is use in a project, not redistribution.
+
+I have written it up in **`CREDITS.md`**, along with one thing worth a moment's
+thought (the repo is public, so the PNGs are publicly downloadable — normal and
+unavoidable for any website, but there are two cheap habits that remove any
+ambiguity) and **three details I still need from you**: the artist's name, the
+pack's name, and the download link. I have deliberately **not** touched
+`faq.html` yet, because a credit line naming the wrong person would be worse
+than no credit at all.
+
+---
+
+## Testing the feeding loop right now
+
+Open **`cat-bowl-demo.html`**. It is a maintainer-only test bench that uses the
+real rules and the real save file, so what you see is what visitors will get.
+
+Try this, in order:
+
+1. **Reset the cat only** → then **+50 test coins** → **Place green bowl**
+2. Press **Feed** a few times. Watch the coins go down and the bowl fill up.
+3. Feed until full — the button should refuse and say "Bowl is full". **It must
+   not take your coins for nothing.**
+4. Now the interesting part: press **+12 hours**. The bowl drops one level.
+   Press **+72 hours**. It empties. Notice that nothing bad happens — no sad
+   message, no penalty. That is the point.
+5. Keep feeding until the coins run out. The button should say "Need 5 🪙"
+   rather than letting you go negative.
+
+> The bowl will show as a **stack of bars with a dashed outline** until you
+> upload the real bowl PNGs to `items/`. That is the intended fallback, not a
+> bug — it means you can test the whole loop before any art arrives.
+
+**The "Reset the cat only" button is worth pressing deliberately.** It clears
+the cat but leaves your coins, your daily check-in and the old emoji pet alone
+— which is the proof that this upgrade will not wipe the saves of visitors who
+already have a buddy.
 
 ---
 

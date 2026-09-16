@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Feeding loop test · 餵食測試</title>
+<!--
+  =====================================================================
+  cat-bowl-demo.html — A TEST BENCH FOR THE FEEDING LOOP
+  =====================================================================
+  Maintainer-only, like sprite-lab.html. Visitors never see this page and
+  nothing links to it. Delete it whenever you like.
+
+  It exists so you can feel the feeding loop before any of it is wired
+  into the real app — including the part that is normally impossible to
+  test, which is what happens after 12 or 36 hours away. The "time
+  travel" buttons fake that instantly.
+
+  It uses the REAL rules from cat-items.js and the REAL save file, so
+  what you see here is exactly what visitors will get.
+  =====================================================================
+-->
+<style>
+  :root{ --paper:#FAF5EA; --ink:#3A3029; --yolk:#F3B72B; --card:#fff; --green:#247A5A; --orange:#ED7848; }
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px;background:var(--paper);color:var(--ink);
+    font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;line-height:1.55}
+  .wrap{max-width:560px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:16px;margin:22px 0 8px;padding-top:12px;border-top:2px dashed rgba(58,48,41,.25)}
+  .lede{font-size:14px;opacity:.8;margin:0 0 16px}
+  .card{background:var(--card);border:2.5px solid var(--ink);border-radius:16px;
+    box-shadow:3px 3px 0 var(--ink);padding:14px;margin:10px 0}
+  button{font-family:inherit;font-weight:800;font-size:15px;color:var(--ink);
+    background:var(--yolk);border:2.5px solid var(--ink);border-radius:12px;
+    box-shadow:3px 3px 0 var(--ink);padding:9px 15px;cursor:pointer;margin:3px 3px 3px 0}
+  button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  button.ghost{background:var(--card);font-size:13.5px;padding:7px 11px;box-shadow:2px 2px 0 var(--ink)}
+  button[disabled]{opacity:.45;cursor:not-allowed;box-shadow:2px 2px 0 rgba(58,48,41,.4)}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .muted{opacity:.72;font-size:13px}
+  code{background:rgba(58,48,41,.08);padding:1px 5px;border-radius:5px;font-size:12.5px}
+
+  /* the bowl stage */
+  .stage{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  #bowlPic{width:128px;height:128px;image-rendering:pixelated;image-rendering:crisp-edges;
+    background-repeat:no-repeat;background-position:center;background-size:contain;
+    border:2px solid rgba(58,48,41,.25);border-radius:12px;background-color:#EFE6D2;flex:none}
+  /* stand-in used when the real PNG is not in items/ yet */
+  .fake{display:flex;flex-direction:column-reverse;gap:3px;padding:10px;width:128px;height:128px;
+    border:2px dashed rgba(58,48,41,.45);border-radius:12px;background:#EFE6D2;flex:none}
+  .fake i{display:block;height:20px;border-radius:4px;background:rgba(58,48,41,.13)}
+  .fake i.on{background:var(--yolk);border:1.5px solid var(--ink)}
+  .lvl{font-size:30px;font-weight:900;line-height:1}
+  .coins{font-size:19px;font-weight:900}
+  .msg{margin-top:10px;font-weight:800;min-height:24px}
+  .msg.good{color:var(--green)} .msg.bad{color:var(--orange)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin-top:6px}
+  td{padding:3px 6px;border-bottom:1px solid rgba(58,48,41,.14)}
+  td:first-child{opacity:.7;width:48%}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>🥣 Feeding loop test bench · 餵食測試台</h1>
+<p class="lede">
+  Maintainer-only page. Uses the real rules from <code>cat-items.js</code> and
+  the real save file — so this is exactly what visitors will experience.<br>
+  這是給維護者測試用的頁面，訪客看不到。
+</p>
+
+<h2>The bowl · 碗</h2>
+<div class="card">
+  <div class="stage">
+    <div id="bowlPic"></div>
+    <div style="flex:1;min-width:190px">
+      <div class="lvl" id="lvl">—</div>
+      <div class="muted" id="lvlsub"></div>
+      <div class="coins" style="margin-top:10px">🪙 <span id="coins">0</span></div>
+      <div class="row" style="margin-top:8px">
+        <button id="feed">🍚 Feed 餵食</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+</div>
+
+<h2>Time travel · 時間快轉</h2>
+<div class="card">
+  <p class="muted" style="margin:0 0 8px">
+    The bowl only drops when time passes <b>between visits</b> — so normally
+    you would have to wait 12 real hours to see anything. These buttons
+    pretend time has passed instead. Nothing here happens to real visitors;
+    it is purely so you can test.<br>
+    碗只會在「兩次造訪之間」下降，這些按鈕用來假裝時間過了。
+  </p>
+  <div class="row">
+    <button class="ghost" data-skip="1">+1 hour</button>
+    <button class="ghost" data-skip="6">+6 hours</button>
+    <button class="ghost" data-skip="12">+12 h (one level)</button>
+    <button class="ghost" data-skip="24">+24 h (one day)</button>
+    <button class="ghost" data-skip="72">+72 h (3 days)</button>
+  </div>
+  <div class="muted" style="margin-top:8px">Pretending it is now: <b id="clock">—</b></div>
+</div>
+
+<h2>Set up / reset · 設定</h2>
+<div class="card">
+  <div class="row">
+    <button class="ghost" id="giveCoins">+50 test coins</button>
+    <button class="ghost" id="placeGreen">Place green bowl</button>
+    <button class="ghost" id="placePurple">Place purple bowl</button>
+    <button class="ghost" id="removeBowl">Remove bowl</button>
+    <button class="ghost" id="wipe">Reset the cat only</button>
+  </div>
+  <p class="muted" style="margin:10px 0 0">
+    “Reset the cat only” clears the cat's progress but <b>deliberately leaves
+    the old emoji pet, the coins and the daily caps alone</b> — proving the
+    upgrade does not wipe existing visitors' saves.
+  </p>
+</div>
+
+<h2>What the rules currently say · 目前規則</h2>
+<div class="card">
+  <table id="rules"></table>
+  <p class="muted" style="margin:10px 0 0">
+    All of these come from <code>BOWL_RULES</code> in <code>cat-items.js</code>.
+    Change a number there, reload this page, and the loop changes.
+  </p>
+</div>
+
+</div>
+
+<script src="foods-data.js"></script>
+<script src="cat-items.js"></script>
+<script src="cat-frames.js"></script>
+<script src="pet-shared.js"></script>
+<script src="cat-state.js"></script>
+<script>
+/* =====================================================================
+   Test-bench wiring. Plain and heavily commented; this page is a tool,
+   not production code.
+   ===================================================================== */
+
+var HOUR = 60 * 60 * 1000;
+
+/* How many hours we are pretending have passed. The real app always uses
+   the true clock; only this page fakes it. */
+var skewHours = 0;
+function pretendNow(){ return Date.now() + skewHours * HOUR; }
+
+function el(id){ return document.getElementById(id); }
+
+/* ---------------------------------------------------------------------
+   Draw everything from the current saved state.
+   --------------------------------------------------------------------- */
+function paint(message, kind){
+  var now = pretendNow();
+  var cat = CatState.load(now);
+
+  el('coins').textContent = Buddy.coins();
+  el('clock').textContent = new Date(now).toLocaleString() +
+      (skewHours ? '  (+' + skewHours + 'h)' : '  (real time)');
+
+  var hasBowl = !!(cat.placed && cat.placed.bowl);
+
+  if (!hasBowl){
+    el('lvl').textContent = 'No bowl';
+    el('lvlsub').textContent = 'Place a bowl below before you can feed.';
+    showFake(cat.bowl.level, true);
+  } else {
+    el('lvl').textContent = 'Level ' + cat.bowl.level + ' / ' + BOWL_RULES.maxLevel;
+    var hrs = CatState.hoursUntilDrop(cat, now);
+    el('lvlsub').textContent = (cat.bowl.level === 0)
+      ? 'Empty — and that is completely fine. Nothing bad happens.'
+      : 'Drops a level in about ' + hrs + ' hour' + (hrs === 1 ? '' : 's') + '.';
+    showBowl(CatState.bowlImage(cat), cat.bowl.level);
+  }
+
+  /* The Feed button explains itself rather than just going grey. */
+  var btn = el('feed');
+  var full = hasBowl && cat.bowl.level >= BOWL_RULES.maxLevel;
+  var broke = Buddy.coins() < BOWL_RULES.feedCost;
+  btn.disabled = !hasBowl || full || broke;
+  btn.textContent = full ? '🍚 Bowl is full'
+                  : broke ? '🍚 Need ' + BOWL_RULES.feedCost + ' 🪙'
+                  : '🍚 Feed 餵食 −' + BOWL_RULES.feedCost + ' 🪙';
+
+  var m = el('msg');
+  m.textContent = message || '';
+  m.className = 'msg' + (kind ? ' ' + kind : '');
+}
+
+/* Show the real bowl PNG. If the file is not in items/ yet, quietly fall
+   back to a stand-in so the loop is still testable before the art lands. */
+function showBowl(filename, level){
+  var box = el('bowlPic');
+  if (!filename){ showFake(level, false); return; }
+  var probe = new Image();
+  probe.onload = function(){
+    box.className = '';
+    box.style.cssText = '';
+    box.style.backgroundImage = "url('items/" + encodeURIComponent(filename) + "')";
+  };
+  probe.onerror = function(){ showFake(level, false); };
+  probe.src = 'items/' + encodeURIComponent(filename);
+}
+
+/* The stand-in: a stack of bars, filled to the current level. */
+function showFake(level, empty){
+  var box = el('bowlPic');
+  box.className = 'fake';
+  box.style.backgroundImage = 'none';
+  var bars = '';
+  for (var i = 1; i <= BOWL_RULES.maxLevel; i++){
+    bars += '<i class="' + (!empty && i <= level ? 'on' : '') + '"></i>';
+  }
+  box.innerHTML = bars;
+}
+
+/* ---------------------------------------------------------------------
+   Buttons
+   --------------------------------------------------------------------- */
+el('feed').addEventListener('click', function(){
+  var r = CatState.feed(pretendNow());
+  if (r.ok) {
+    paint('Yum! 好好吃～  (level ' + r.level + ', −' + r.spent + ' 🪙)', 'good');
+  } else if (r.reason === 'no-bowl') {
+    paint('Place a bowl first.', 'bad');
+  } else if (r.reason === 'full') {
+    paint('Already full — nothing charged.', 'bad');
+  } else if (r.reason === 'broke') {
+    paint('Not enough coins. Go play a game! 金幣不夠', 'bad');
+  } else {
+    paint('Could not feed (' + r.reason + ')', 'bad');
+  }
+});
+
+/* Time travel */
+var skipBtns = document.querySelectorAll('[data-skip]');
+for (var i = 0; i < skipBtns.length; i++){
+  skipBtns[i].addEventListener('click', function(){
+    skewHours += parseInt(this.getAttribute('data-skip'), 10);
+    paint('Pretended ' + this.getAttribute('data-skip') + ' hours passed.', '');
+  });
+}
+
+/* Setup helpers. These reach into the save directly because this is a
+   test page — the real app will never do this. */
+el('giveCoins').addEventListener('click', function(){
+  /* Buddy.spend takes coins away; a negative spend adds them back. This
+     is a test-only shortcut and is NOT a new way to earn coins. */
+  Buddy.set('coins', Buddy.coins() + 50);
+  paint('Added 50 test coins.', 'good');
+});
+
+function placeBowl(id){
+  var cat = CatState.load(pretendNow());
+  if (cat.owned.indexOf(id) < 0) cat.owned.push(id);
+  cat.placed.bowl = id;
+  CatState.save(cat);
+  paint('Placed ' + id + '.', 'good');
+}
+el('placeGreen').addEventListener('click', function(){ placeBowl('bowl-green'); });
+el('placePurple').addEventListener('click', function(){ placeBowl('bowl-purple'); });
+
+el('removeBowl').addEventListener('click', function(){
+  var cat = CatState.load(pretendNow());
+  delete cat.placed.bowl;
+  CatState.save(cat);
+  paint('Bowl removed.', '');
+});
+
+el('wipe').addEventListener('click', function(){
+  Buddy.set('cat', CatState._blank());
+  skewHours = 0;
+  paint('Cat reset. Coins, daily caps and the emoji pet were left alone.', '');
+});
+
+/* ---------------------------------------------------------------------
+   Show the current rules, read live from cat-items.js
+   --------------------------------------------------------------------- */
+(function showRules(){
+  var perDay = (24 / BOWL_RULES.decayHours);
+  var costPerDay = perDay * BOWL_RULES.feedCost / BOWL_RULES.feedStep;
+  var rows = [
+    ['Feed costs',            BOWL_RULES.feedCost + ' 🪙'],
+    ['Each feed raises by',   BOWL_RULES.feedStep + ' level'],
+    ['Bowl empties a level every', BOWL_RULES.decayHours + ' hours'],
+    ['Full bowl',             'level ' + BOWL_RULES.maxLevel],
+    ['Full bowl lasts',       (BOWL_RULES.maxLevel * BOWL_RULES.decayHours) + ' hours from full to empty'],
+    ['Costs to keep full',    Math.round(costPerDay) + ' 🪙 per day'],
+    ['Daily check-in gives',  '10 🪙 per day'],
+    ['Penalty for empty bowl','none, ever'],
+  ];
+  el('rules').innerHTML = rows.map(function(r){
+    return '<tr><td>' + r[0] + '</td><td><b>' + r[1] + '</b></td></tr>';
+  }).join('');
+})();
+
+paint('', '');
+</script>
+</body>
+</html>
