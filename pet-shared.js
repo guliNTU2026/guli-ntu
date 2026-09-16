@@ -535,7 +535,9 @@
     background:var(--card,#fff);border:2.5px solid var(--ink,#3A3029);border-radius:16px;
     box-shadow:3px 3px 0 var(--ink,#3A3029);text-align:center;
     font-family:inherit;color:var(--ink,#3A3029)}
-  .bd-fund .bd-fund-logo{height:34px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto}
+  .bd-fund .bd-fund-logos{display:flex;justify-content:center;align-items:center;
+    gap:14px;margin-bottom:9px;flex-wrap:wrap}
+  .bd-fund .bd-fund-logos img{height:36px;width:auto;max-width:44%}
   .bd-fund .bd-fund-zh{font-size:14px;font-weight:800;line-height:1.6}
   .bd-fund .bd-fund-en{font-size:12px;line-height:1.55;opacity:.8;margin-top:5px}
   .bd-fund .bd-social{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}
@@ -574,10 +576,16 @@
     /* The Chinese line shows in BOTH languages: it is the official
        required wording, not a translation of something. */
     let html = "";
-    /* An optional HPA logo. If images/hpa-logo.png is not there, the
-       onerror hides it and nothing looks broken. */
-    html += `<img class="bd-fund-logo" src="images/hpa-logo.png" alt=""
-               onerror="this.style.display='none'">`;
+    /* Logos. Any that is missing hides itself, so this is safe to leave
+       in place before the files are uploaded. The project logo goes
+       first because this is the project's own footer. */
+    html += `<div class="bd-fund-logos">`;
+    if (typeof BRANDING !== "undefined" && BRANDING.logo) {
+      html += `<img src="${BRANDING.logo}" alt="${BRANDING.alt ? BRANDING.alt[lang] : ""}"
+                 onerror="this.style.display='none'">`;
+    }
+    html += `<img src="images/hpa-logo.png" alt="" onerror="this.style.display='none'">`;
+    html += `</div>`;
     html += `<div class="bd-fund-zh">${FUNDING.zh}</div>`;
     if (lang === "en" && FUNDING.en) {
       html += `<div class="bd-fund-en">${FUNDING.en}</div>`;

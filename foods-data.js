@@ -425,6 +425,27 @@ const TIPS = [
 
 
 /* ---------------------------------------------------------------
+   BRANDING — your project logo, shown across the whole site.
+   ---------------------------------------------------------------
+   Put the logo file in the images/ folder and write its name below.
+   It then appears automatically in the footer bar of every page, on the
+   landing page header, and on the shared photo card.
+
+   ⚠️ If the file is missing, every one of those places hides the logo by
+   itself and nothing looks broken — so it is safe to set this before the
+   file is uploaded.
+
+   A logo works best as a PNG with a TRANSPARENT background (a
+   checkerboard behind it when you open it, not solid white), roughly
+   400-600px wide. It is shown small, so fine detail will be lost.
+   --------------------------------------------------------------- */
+const BRANDING = {
+  logo: "images/guli_logo.png",   /* ✏️ EDIT HERE — your logo file */
+  alt:  { zh: "計畫標誌", en: "Project logo" },
+};
+
+
+/* ---------------------------------------------------------------
    FUNDING STATEMENT — shown prominently on EVERY page.
    ---------------------------------------------------------------
    This is the required funding acknowledgement. It appears in a

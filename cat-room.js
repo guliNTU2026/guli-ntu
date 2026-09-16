@@ -906,17 +906,17 @@ const CatRoom = (function () {
       ctx.font = "40px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       /* Corners only. A fifth at the bottom centre would sit on top of
          the app name and date. */
-      [[70, 70], [W - 70, 70], [70, H - 70], [W - 70, H - 70]]
+      [[70, 66], [W - 70, 66], [66, H - 62], [W - 66, H - 62]]
         .forEach((pos, i) => { if (deco[i % deco.length]) ctx.fillText(deco[i % deco.length], pos[0], pos[1]); });
     }
 
     /* title */
     ctx.fillStyle = INK; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.font = "900 34px " + FONT;
-    ctx.fillText(tx("title"), W / 2, 100);
+    ctx.font = "900 32px " + FONT;
+    ctx.fillText(tx("title"), W / 2, 92);
 
     /* ---- the room ---- */
-    const RX = 70, RY = 145, RW = W - 140, RH = Math.round((W - 140) * 0.75);
+    const RX = 70, RY = 132, RW = W - 140, RH = Math.round((W - 140) * 0.70);
     const st = Object.assign({}, (typeof ROOM_STYLE !== "undefined") ? ROOM_STYLE : {});
     const bought = CatState.decorStyle(cat);
     if (bought.wall)  Object.assign(st, bought.wall);
@@ -1002,20 +1002,48 @@ const CatRoom = (function () {
     const n = CatState.catCount(cat);
     ctx.fillStyle = INK; ctx.font = "900 36px " + FONT;
     ctx.fillText(tx("myCats").replace("{n}", n).replace("{s}", n === 1 ? "" : "s"),
-                 W / 2, RY + RH + 62);
+                 W / 2, RY + RH + 52);
 
     const names = CatState.ownedCats(cat).map(c => nm(c)).join(" · ");
     ctx.font = "400 24px " + FONT; ctx.globalAlpha = .75; ctx.fillStyle = INK;
-    ctx.fillText(names, W / 2, RY + RH + 104); ctx.globalAlpha = 1;
+    ctx.fillText(names, W / 2, RY + RH + 90); ctx.globalAlpha = 1;
+
+    /* ---- logo, hashtag, and the funding statement ----
+       The funding line goes ON THE CARD, not just on the website. A
+       shared picture travels a long way from the page it came from, and
+       by the time someone's friend sees it there is no footer, no site
+       and no context — so the acknowledgement has to travel with it. */
+    let y = RY + RH + 150;
+
+    /* the project logo, if it has been uploaded */
+    if (typeof BRANDING !== "undefined" && BRANDING.logo) {
+      const logo = await getImage(BRANDING.logo);
+      if (logo && logo.width) {
+        const lh = 46, lw = Math.round(logo.width * (lh / logo.height));
+        ctx.drawImage(logo, W / 2 - lw / 2, y - lh / 2, lw, lh);
+        y += 44;
+      }
+    }
 
     const tag = (typeof SHARE !== "undefined") ? SHARE.hashtag : "";
-    ctx.fillStyle = style.frame || "#F3B72B"; ctx.font = "900 32px " + FONT;
-    ctx.fillText(tag, W / 2, H - 116);
-    ctx.globalAlpha = .6; ctx.fillStyle = INK; ctx.font = "400 20px " + FONT;
+    ctx.fillStyle = style.frame || "#F3B72B"; ctx.font = "900 30px " + FONT;
+    ctx.fillText(tag, W / 2, y);
+    y += 36;
+
+    /* The required funding acknowledgement, in the official Chinese
+       wording. It stays Chinese in both language modes because that is
+       the prescribed text, not a translation of something. */
+    if (typeof FUNDING !== "undefined" && FUNDING.zh) {
+      ctx.globalAlpha = .75; ctx.fillStyle = INK; ctx.font = "700 17px " + FONT;
+      ctx.fillText(FUNDING.zh, W / 2, y);
+      y += 26;
+    }
+
+    ctx.globalAlpha = .55; ctx.fillStyle = INK; ctx.font = "400 17px " + FONT;
     const app = (typeof SHARE !== "undefined")
       ? (lang === "zh" ? SHARE.appName.zh : SHARE.appName.en) : "Campus Buddy";
     ctx.fillText(app + " · " + new Date().toLocaleDateString(lang === "zh" ? "zh-TW" : "en-US"),
-                 W / 2, H - 88);
+                 W / 2, y);
     ctx.globalAlpha = 1;
 
     /* ------------------------------------------------------------------

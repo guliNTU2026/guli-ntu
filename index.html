@@ -70,6 +70,13 @@ footer{font-size:11.5px;opacity:.55;text-align:center;margin-top:26px;line-heigh
 </head>
 <body>
 <div class="wrap">
+
+  <!-- Project logo. Hides itself if images/guli_logo.png is not there yet,
+       so this is safe to leave in place before the file is uploaded.
+       The filename comes from BRANDING in foods-data.js. -->
+  <img id="brandLogo" alt="" style="display:none;max-width:190px;width:52%;
+       height:auto;margin:0 auto 14px">
+
   <header>
     <button class="langbtn" id="langBtn" onclick="toggleLang()">EN</button>
   </header>
@@ -139,6 +146,22 @@ const UI = {
 
 let lang = "zh";
 const t = k => UI[k][lang];
+/* The project logo, from BRANDING in foods-data.js.
+   It starts hidden and is only revealed once the file has actually
+   loaded, so a missing logo simply leaves a clean gap instead of a
+   broken-image icon. (Setting onerror in the HTML does not work here:
+   an <img> with no src fires onerror immediately and would hide itself
+   before we ever got the chance to give it an address.) */
+function paintLogo(){
+  var el = document.getElementById("brandLogo");
+  if (!el || typeof BRANDING === "undefined" || !BRANDING.logo) return;
+  el.alt = BRANDING.alt ? BRANDING.alt[lang] : "";
+  if (el.getAttribute("src") === BRANDING.logo) return;
+  el.onload  = function(){ el.style.display = "block"; };
+  el.onerror = function(){ el.style.display = "none"; };
+  el.src = BRANDING.logo;
+}
+
 function toggleLang(){
   lang = lang === "zh" ? "en" : "zh";
   document.getElementById("langBtn").textContent = lang === "zh" ? "EN" : "中";
@@ -147,6 +170,7 @@ function toggleLang(){
   render();
 }
 function render(){
+  paintLogo();
   document.getElementById("title").textContent     = t("title");
   document.getElementById("tagline").textContent   = t("tagline");
   document.getElementById("pairName").textContent  = t("pairName");
