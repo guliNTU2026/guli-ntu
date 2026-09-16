@@ -320,23 +320,39 @@ const CAT_ACCESSORIES = [
    x,y are % of the room (0-100). pose must match a cat action name.
    ===================================================================== */
 const ROOM_SPOTS = [
-  /* --- spots that need a piece of furniture before they exist --- */
-  { id:"by-bowl",      x:20, y:72, needs:"bowl",  pose:"eat-front" },
-  { id:"at-water",     x:34, y:78, needs:"water", pose:"drink-front" },
-  { id:"in-bed",       x:74, y:70, needs:"bed",   pose:"sleep-lay-front-l" },
+  /* x,y   = where the CAT stands (percent of the room; y counts DOWNWARDS)
+     ix,iy = where the FURNITURE for this spot is drawn. The bowl sits in
+             front of the cat; the bed sits under it.
 
-  /* --- spots that are ALWAYS available, furniture or not, so the room
-     never looks empty and every cat has somewhere nice to be.
-     There are FOUR of these on purpose: there are four cat colours, so
-     four is the most cats anyone can own. That means even a visitor who
-     has bought every cat and no furniture at all still gets a proper
-     spot for each one, and the "line them up on the floor" fallback
-     never has to happen. If you ever add a 5th colour to CAT_COLORS,
-     add a 5th spot here too. --- */
-  { id:"lounge-left",  x:30, y:56, needs:null,    pose:"lying" },
-  { id:"lounge-right", x:66, y:86, needs:null,    pose:"sit-front" },
-  { id:"lounge-back",  x:40, y:38, needs:null,    pose:"yawn-sit" },
-  { id:"center",       x:50, y:70, needs:null,    pose:"wash-sit" },
+     ⚠️ SPACING MATTERS. A cat is drawn about 15% of the room wide, so two
+     spots closer than that will visibly overlap. The room is 4:3, which
+     means 1% of HEIGHT is only 0.75% of WIDTH — so vertical gaps need to
+     be bigger than horizontal ones to look the same.
+     The seven spots below are laid out as three rows (back / middle /
+     front), every pair at least 22% apart in width terms. If you move
+     one, keep that much clearance or cats will sit on top of each other.
+
+     Everything must also stay BELOW ROOM_STYLE.floorTop, or it looks
+     like it is floating on the wall. */
+
+  /* --- back row --- */
+  { id:"at-water",     x:32, y:58, ix:32, iy:66, needs:"water", pose:"drink-front" },
+  { id:"in-bed",       x:68, y:58, ix:68, iy:62, needs:"bed",   pose:"sleep-lay-front-l" },
+
+  /* --- middle row --- */
+  { id:"by-bowl",      x:14, y:76, ix:14, iy:86, needs:"bowl",  pose:"eat-front" },
+  { id:"center",       x:50, y:76, needs:null,   pose:"wash-sit" },
+  { id:"lounge-back",  x:80, y:78, needs:null,   pose:"yawn-sit" },
+
+  /* --- front row --- */
+  { id:"lounge-left",  x:32, y:94, needs:null,   pose:"lying" },
+  { id:"lounge-right", x:68, y:94, needs:null,   pose:"sit-front" },
+
+  /* Four of these need no furniture at all (center, lounge-back,
+     lounge-left, lounge-right), matching the four cat colours — so even
+     a visitor who owns every cat and has bought nothing still gets a
+     proper spot for each, and the floor fallback never triggers. Add a
+     5th colour to CAT_COLORS and you should add a 5th free spot here. */
 ];
 
 
@@ -351,19 +367,55 @@ const ROOM_SPOTS = [
      • a toy is tiny, and a cat standing on it would cover it entirely
 
    In each case you would pay coins for something and then not be able to
-   see it, which is the opposite of what a decorating game should do. So
-   these items simply sit in the room and look nice.
+   see it, which is the opposite of what a decorating game should do.
 
-   x,y are percentages of the room (0-100), same as ROOM_SPOTS. ✏️ Move
-   anything by changing its numbers. The positions below are chosen to
-   stay clear of the cat spots above so nothing covers anything else.
+   x,y  = position, percent of the room.
+   size = how wide to draw it, percent of the room width. Bump it up for
+          big things like the tree house. ✏️ Tune these once the real
+          artwork is in items/ — they are first guesses.
    ===================================================================== */
 const ROOM_DECOR = [
-  { needs:"post",    x:88, y:44 },   /* scratching post / tree house */
-  { needs:"carrier", x:12, y:48 },   /* cat carrier */
-  { needs:"toy",     x:60, y:56 },   /* mouse, bee, ball... */
-  { needs:"plant",   x:7,  y:26 },   /* potted plant */
+  { needs:"post",    x:94, y:56, size:24 },   /* scratching post / tree house */
+  { needs:"carrier", x:6,  y:56, size:16 },   /* cat carrier */
+  { needs:"toy",     x:50, y:96, size:9  },   /* mouse, bee, ball... */
+  { needs:"plant",   x:96, y:96, size:15 },   /* potted plant */
 ];
+
+
+/* =====================================================================
+   THE ROOM ITSELF — colours, not pictures.
+   =====================================================================
+   There is no illustrated background, so the room is DRAWN WITH COLOUR
+   BANDS: a wall across the top, a skirting board, and a floor below.
+   Flat colours with hard edges, to sit properly alongside pixel art.
+
+   ✏️ Change any colour below and the room changes. Colours are written
+   as #RRGGBB — use any colour picker to get one.
+
+   floorTop = how far down the wall ends and the floor begins, as a
+   percentage. Raise it for a taller wall, lower it for more floor.
+   ⚠️ If you change it, check nothing in ROOM_SPOTS or ROOM_DECOR is
+   left floating above the floor line.
+
+   GOT A REAL BACKGROUND PICTURE LATER?
+   Put the file in items/ and write its name in `image` below, e.g.
+       image: "room_background.png",
+   The drawn room is then replaced by your picture automatically and all
+   the colours here are ignored. Set it back to "" to return to colours.
+   ===================================================================== */
+const ROOM_STYLE = {
+  image:      "",          /* optional background PNG in items/ — "" = use the colours below */
+  wall:       "#F1E6CF",   /* upper part of the room */
+  wallShade:  "#E6D5B2",   /* a slightly darker band at the top, adds depth */
+  skirting:   "#B39061",   /* the board where the wall meets the floor */
+  floor:      "#D8B98A",   /* the floorboards */
+  floorLine:  "#C3A075",   /* floorboard lines */
+  floorTop:   52,          /* percent down the room where the floor starts */
+  window:     true,        /* draw a simple window on the wall? true / false */
+  windowGlass:"#CFE4E8",   /* the sky colour seen through it */
+  rug:        true,        /* draw a soft rug on the floor? true / false */
+  rugColor:   "#E2B9A0",
+};
 
 
 /* HOW A CAT SPOT BECOMES AVAILABLE

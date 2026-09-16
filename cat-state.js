@@ -320,6 +320,87 @@ const CatState = (function () {
     },
 
     /* ================================================================
+       BUYING, PLACING AND WEARING
+       ================================================================ */
+
+    /* Does the visitor already own this item? */
+    owns(cat, id) {
+      return !!(cat && cat.owned && cat.owned.indexOf(id) >= 0);
+    },
+
+    /* Look an item up by id, from any of the lists in cat-items.js. */
+    item(id) { return this.allItems().find(i => i.id === id) || null; },
+
+    /* ----------------------------------------------------------------
+       Buy an item. Returns:
+         { ok:true,  spent:30 }
+         { ok:true,  already:true }        already owned, nothing charged
+         { ok:false, reason:"broke", need:30 }
+         { ok:false, reason:"unknown" }
+       ---------------------------------------------------------------- */
+    buy(id) {
+      const item = this.item(id);
+      if (!item) return { ok: false, reason: "unknown" };
+
+      const cat = readRaw();
+      if (this.owns(cat, id)) return { ok: true, already: true, spent: 0 };
+
+      const price = item.price || 0;
+      if (price > 0) {
+        if (typeof Buddy === "undefined" || !Buddy.spend || !Buddy.spend(price)) {
+          return { ok: false, reason: "broke", need: price };
+        }
+      }
+      cat.owned.push(id);
+
+      /* Put it straight into the room, so buying something always has a
+         visible result. Anything already in that slot is swapped out but
+         stays owned, so nothing is ever lost by buying. */
+      if (item.category && !this.isWearable(item)) cat.placed[item.category] = id;
+      else if (this.isWearable(item)) cat.worn.push(id);
+
+      writeRaw(cat);
+      return { ok: true, spent: price, placed: true };
+    },
+
+    /* Accessories are WORN on the cat; everything else is PLACED in the
+       room. One list, so the two paths never disagree. */
+    isWearable(item) {
+      return !!item && ["collar", "bow", "heart", "hat", "seasonal"].indexOf(item.category) >= 0;
+    },
+
+    /* Put an owned item into the room, or take it out again if it is
+       already the one on show. Only one item per category is out at a
+       time — one bed, one bowl — the rest stay owned in the cupboard. */
+    place(id) {
+      const item = this.item(id);
+      if (!item || !item.category) return { ok: false, reason: "unknown" };
+      const cat = readRaw();
+      if (!this.owns(cat, id)) return { ok: false, reason: "not-owned" };
+
+      if (cat.placed[item.category] === id) delete cat.placed[item.category];
+      else cat.placed[item.category] = id;
+
+      writeRaw(cat);
+      return { ok: true, placed: cat.placed[item.category] === id };
+    },
+
+    /* Put an owned accessory on the cat, or take it off. */
+    wear(id) {
+      const item = this.item(id);
+      if (!item) return { ok: false, reason: "unknown" };
+      const cat = readRaw();
+      if (!this.owns(cat, id)) return { ok: false, reason: "not-owned" };
+
+      const at = cat.worn.indexOf(id);
+      if (at >= 0) cat.worn.splice(at, 1);
+      else cat.worn.push(id);
+
+      writeRaw(cat);
+      return { ok: true, worn: at < 0 };
+    },
+
+    /* ================================================================
        THE CAT ROSTER — owning more than one cat
        ================================================================
        Short answer to "is this too hard to track?": no, not at all. The

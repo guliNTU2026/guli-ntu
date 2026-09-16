@@ -100,6 +100,27 @@ Double-click it. This is a test page only; visitors never see it.
 > Bowls appear as **bars with a dashed outline** and cats as **coloured
 > circles**. That is the intended stand-in until the PNGs arrive — not a bug.
 
+### C2. **The real UI** — `cat-preview.html`  ← the one to look at
+
+This is the page that matters for design. It shows **exactly what a visitor
+will see**, with nothing added except a small grey strip at the very bottom for
+adding test coins. Everything above that strip is the real thing.
+
+Try: **reset cat** → **+50 test coins** a few times → tap a cat colour to adopt
+→ then the **家具 / Furniture** tab and buy a bowl, some water and a bed. Watch
+the room fill up. Tap **Feed**. Tap **next visit** to see the cats move.
+
+Things worth forming an opinion on, since they are easy to change:
+
+- the room's colours (wall, floor, skirting, rug) — all in `ROOM_STYLE` in
+  `cat-items.js`
+- where things sit in the room — `ROOM_SPOTS` and `ROOM_DECOR`
+- the shop tabs and their order
+- prices
+
+> Furniture shows as **dashed grey squares** and cats as **coloured circles**
+> until the PNGs are in `sprites/` and `items/`. That is the stand-in, not a bug.
+
 ### D. The animations — `sprite-lab.html`
 Double-click it, click the file picker, choose one of your cat PNGs **from your
 own computer**. Nothing is uploaded anywhere. You should see the measurements,
