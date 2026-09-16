@@ -61,7 +61,11 @@
   /* the little room preview */
   #room{position:relative;width:100%;aspect-ratio:4/3;background:#EFE6D2;
     border:2.5px solid var(--ink);border-radius:14px;overflow:hidden;margin-top:6px}
-  .catdot{position:absolute;transform:translate(-50%,-50%);text-align:center;width:66px}
+  .catdot{position:absolute;transform:translate(-50%,-50%);text-align:center;width:66px;z-index:2}
+  .decor{position:absolute;transform:translate(-50%,-50%);text-align:center;width:58px;z-index:1;opacity:.92}
+  .decor .dbox{width:38px;height:38px;margin:0 auto;border:2px dashed rgba(58,48,41,.5);
+    border-radius:7px;background:#E3D8BE;display:flex;align-items:center;justify-content:center;
+    font-weight:900;font-size:14px;image-rendering:pixelated}
   .catdot .sp{width:48px;height:48px;margin:0 auto;image-rendering:pixelated;
     image-rendering:crisp-edges;background-repeat:no-repeat;border-radius:50%}
   .catdot .ball{width:40px;height:40px;margin:0 auto;border-radius:50%;
@@ -148,7 +152,9 @@
 
   <div id="room"></div>
   <p class="muted" style="margin:8px 0 0">
-    Every cat owned is in the room at once, each in its own spot. Press
+    Cats sit in their own spots; posts, carriers, toys and plants are
+    <b>decoration</b> — drawn in the room but never stood on, so they stay
+    visible. Press
     <b>Next visit</b> to see them rearrange — that is the "the cat moved while
     you were away" effect, with no walking to animate.
   </p>
@@ -287,6 +293,28 @@ function paintCats(cat){
   /* the room preview */
   var room = el('room');
   room.innerHTML = '';
+  /* decoration first, so cats draw on top of it */
+  CatState.decorLayout(cat).forEach(function(d){
+    var box = document.createElement('div');
+    box.className = 'decor';
+    box.style.left = d.x + '%';
+    box.style.top  = d.y + '%';
+    box.innerHTML = '<div class="dbox">' + d.category.charAt(0).toUpperCase() +
+                    '</div><div class="cap">' + d.id + '</div>';
+    room.appendChild(box);
+    var probe = new Image();
+    probe.onload = function(){
+      var pic = box.querySelector('.dbox');
+      pic.textContent = '';
+      pic.style.backgroundImage = "url('items/" + encodeURIComponent(d.file) + "')";
+      pic.style.backgroundSize = 'contain';
+      pic.style.backgroundRepeat = 'no-repeat';
+      pic.style.backgroundPosition = 'center';
+      pic.style.border = 'none';
+    };
+    probe.src = 'items/' + encodeURIComponent(d.file);
+  });
+
   var spots = CatState.arrangeCats(cat);
   spots.forEach(function(s){
     var colour = CAT_COLORS.find(function(c){ return c.id === s.colour; }) || {};

@@ -279,32 +279,73 @@ const CAT_ACCESSORIES = [
    x,y are % of the room (0-100). pose must match a cat action name.
    ===================================================================== */
 const ROOM_SPOTS = [
-  { id:"by-bowl",    x:20, y:72, needs:"bowl",    pose:"eat-front" },
-  { id:"at-water",   x:36, y:76, needs:"water",   pose:"drink-front" },
-  { id:"in-bed",     x:74, y:70, needs:"bed",     pose:"sleep-lay-front-l" },
-  { id:"at-post",    x:86, y:36, needs:"post",    pose:"itch-r" },
-  { id:"in-carrier", x:14, y:42, needs:"carrier", pose:"sit-front" },
-  { id:"with-toy",   x:60, y:50, needs:"toy",     pose:"play" },
-  { id:"center",     x:48, y:80, needs:null,      pose:"wash-sit" },  /* always valid fallback */
+  /* --- spots that need a piece of furniture before they exist --- */
+  { id:"by-bowl",      x:20, y:72, needs:"bowl",  pose:"eat-front" },
+  { id:"at-water",     x:34, y:78, needs:"water", pose:"drink-front" },
+  { id:"in-bed",       x:74, y:70, needs:"bed",   pose:"sleep-lay-front-l" },
+
+  /* --- spots that are ALWAYS available, furniture or not, so the room
+     never looks empty and every cat has somewhere nice to be.
+     There are FOUR of these on purpose: there are four cat colours, so
+     four is the most cats anyone can own. That means even a visitor who
+     has bought every cat and no furniture at all still gets a proper
+     spot for each one, and the "line them up on the floor" fallback
+     never has to happen. If you ever add a 5th colour to CAT_COLORS,
+     add a 5th spot here too. --- */
+  { id:"lounge-left",  x:30, y:56, needs:null,    pose:"lying" },
+  { id:"lounge-right", x:66, y:86, needs:null,    pose:"sit-front" },
+  { id:"lounge-back",  x:40, y:38, needs:null,    pose:"stretch" },
+  { id:"center",       x:50, y:70, needs:null,    pose:"wash-sit" },
 ];
 
-/* HOW A SPOT BECOMES AVAILABLE
-   A spot only counts if the thing it "needs" is actually placed in the
-   room. The word after `needs:` must match an item's `category:`.
-   So "at-post" switches on the moment a scratching post is placed,
-   "in-carrier" when a carrier is placed, and so on.
 
-   "center" needs nothing, so there is ALWAYS at least one place to
-   stand — an empty room still works.
+/* =====================================================================
+   DECORATION — things the cat does NOT stand on or in.
+   =====================================================================
+   Scratching posts, carriers, toys and plants are drawn in the room but
+   the cat never occupies them. That is deliberate:
 
-   Every cat the visitor owns gets its OWN spot, so the more furniture
-   they buy, the more spread out the room looks. With 7 spots here there
-   is room for plenty of cats before any of them have to line up on the
-   floor. ✏️ Move a spot by changing its x,y (percentages of the room,
-   0-100). Delete a line and that spot simply stops being used.
+     • a carrier is small, so a cat placed there would hide it completely
+     • a post is tall and thin, and the cat would not sit on it convincingly
+     • a toy is tiny, and a cat standing on it would cover it entirely
 
-   NOTE: plants have no spot on purpose — they are pure decoration and
-   the cat does not interact with them.
+   In each case you would pay coins for something and then not be able to
+   see it, which is the opposite of what a decorating game should do. So
+   these items simply sit in the room and look nice.
+
+   x,y are percentages of the room (0-100), same as ROOM_SPOTS. ✏️ Move
+   anything by changing its numbers. The positions below are chosen to
+   stay clear of the cat spots above so nothing covers anything else.
+   ===================================================================== */
+const ROOM_DECOR = [
+  { needs:"post",    x:88, y:44 },   /* scratching post / tree house */
+  { needs:"carrier", x:12, y:48 },   /* cat carrier */
+  { needs:"toy",     x:60, y:56 },   /* mouse, bee, ball... */
+  { needs:"plant",   x:7,  y:26 },   /* potted plant */
+];
+
+
+/* HOW A CAT SPOT BECOMES AVAILABLE
+   A spot in ROOM_SPOTS only counts if the thing it "needs" is actually
+   placed in the room. The word after `needs:` must match an item's
+   `category:`. A spot with `needs:null` is always available, which is
+   why an empty room still works.
+
+   Every cat the visitor owns gets its OWN spot, so nobody overlaps. With
+   3 always-available spots plus up to 3 more from furniture, there is
+   room for several cats before any of them have to line up on the floor.
+
+   WANT THE CAT ON THE SCRATCHING POST AFTER ALL?
+   You mentioned some of the post artwork might work with a cat sitting
+   on top. If you try it and like it, add this line back into ROOM_SPOTS
+   and it switches on immediately:
+
+       { id:"at-post", x:88, y:30, needs:"post", pose:"itch-r" },
+
+   ...and delete the `post` line from ROOM_DECOR so it is not drawn
+   twice. The "itch-r" pose is still listed in cat-frames.js ready for
+   exactly this. Worth testing once the real art is in place — it is a
+   two-line change either way.
 
    NOTE ABOUT "drink-front"
    That pose is not in cat-frames.js with a real row yet, so the cat will

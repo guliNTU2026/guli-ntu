@@ -466,6 +466,55 @@ const CatState = (function () {
     },
 
     /* ----------------------------------------------------------------
+       WHERE THE DECORATION GOES.
+
+       Scratching posts, carriers, toys and plants are drawn in the room
+       but the cat never stands on them (see the note in cat-items.js for
+       why). This returns one entry per decorative item actually placed,
+       ready to be drawn.
+
+       Returns: [ { id, file, x, y, category } ]   x,y are % of the room
+       ---------------------------------------------------------------- */
+    decorLayout(cat) {
+      if (typeof ROOM_DECOR === "undefined") return [];
+      if (!cat || !cat.placed) return [];
+
+      const out = [];
+      ROOM_DECOR.forEach(slot => {
+        const placedId = cat.placed[slot.needs];
+        if (!placedId) return;                    // nothing of this kind placed
+
+        /* Find the item in whichever list it lives in. */
+        const item = this.allItems().find(i => i.id === placedId);
+        if (!item || !item.file) return;          // unknown or has no picture
+
+        out.push({ id: item.id, file: item.file, x: slot.x, y: slot.y,
+                   category: slot.needs });
+      });
+      return out;
+    },
+
+    /* Every buyable thing from cat-items.js, seasons IGNORED. Used when we
+       need to look an item up by id regardless of the date — someone who
+       bought a Christmas hat in December still owns it in March. */
+    allItems() {
+      const groups = [
+        typeof CAT_BOWLS       !== "undefined" ? CAT_BOWLS       : [],
+        typeof CAT_FOODS       !== "undefined" ? CAT_FOODS       : [],
+        typeof CAT_WATER       !== "undefined" ? CAT_WATER       : [],
+        typeof CAT_TOYS        !== "undefined" ? CAT_TOYS        : [],
+        typeof CAT_BEDS        !== "undefined" ? CAT_BEDS        : [],
+        typeof CAT_POSTS       !== "undefined" ? CAT_POSTS       : [],
+        typeof CAT_CARRIERS    !== "undefined" ? CAT_CARRIERS    : [],
+        typeof CAT_PLANTS      !== "undefined" ? CAT_PLANTS      : [],
+        typeof CAT_ACCESSORIES !== "undefined" ? CAT_ACCESSORIES : [],
+      ];
+      const all = [];
+      groups.forEach(g => g.forEach(i => all.push(i)));
+      return all;
+    },
+
+    /* ----------------------------------------------------------------
        SEASONAL FILTER — decides whether an item from cat-items.js should
        be on sale today.
 
@@ -497,25 +546,7 @@ const CatState = (function () {
 
     /* Everything currently purchasable, seasons applied. */
     catalogue(when) {
-      /* Every list of buyable things from cat-items.js.
-         ⚠️ IF YOU ADD A NEW LIST to cat-items.js (say CAT_RUGS), add one
-         line here too or the shop will never show it. The `typeof` check
-         means a list that does not exist is skipped instead of crashing
-         the page, which is why a missing line fails silently. */
-      const groups = [
-        typeof CAT_BOWLS       !== "undefined" ? CAT_BOWLS       : [],
-        typeof CAT_FOODS       !== "undefined" ? CAT_FOODS       : [],
-        typeof CAT_WATER       !== "undefined" ? CAT_WATER       : [],
-        typeof CAT_TOYS        !== "undefined" ? CAT_TOYS        : [],
-        typeof CAT_BEDS        !== "undefined" ? CAT_BEDS        : [],
-        typeof CAT_POSTS       !== "undefined" ? CAT_POSTS       : [],
-        typeof CAT_CARRIERS    !== "undefined" ? CAT_CARRIERS    : [],
-        typeof CAT_PLANTS      !== "undefined" ? CAT_PLANTS      : [],
-        typeof CAT_ACCESSORIES !== "undefined" ? CAT_ACCESSORIES : [],
-      ];
-      const all = [];
-      groups.forEach(g => g.forEach(i => all.push(i)));
-      return all.filter(i => CatState.inSeason(i, when));
+      return this.allItems().filter(i => CatState.inSeason(i, when));
     },
 
     /* Exposed for the test page only. Lets a test pretend that hours

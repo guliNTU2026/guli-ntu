@@ -123,8 +123,12 @@ const CAT_FRAMES = {
      asleep, facing front, lying on its left. ---- */
   "sleep-lay-front-l": { row: null, from: 0, count: 4, fps: 2, loop: "loop-slow" },
 
-  /* ---- USED BY cat-items.js → ROOM_SPOTS "at-post". Scratching the
-     scratching post, facing right. ---- */
+  /* ---- CURRENTLY UNUSED, but kept on purpose.
+     Scratching posts are decoration for now (the cat would not sit on
+     one convincingly). If you later find a post whose artwork works
+     with a cat on top, cat-items.js explains the two-line change that
+     switches this back on — so it is worth filling in if you spot the
+     row. ---- */
   "itch-r":      { row: null, from: 0, count: 4, fps: 8, loop: "loop" },
 
   /* ---- USED BY cat-items.js → ROOM_SPOTS "center". Sitting and
@@ -132,17 +136,19 @@ const CAT_FRAMES = {
      so it is worth filling in first. ---- */
   "wash-sit":    { row: null, from: 0, count: 6, fps: 6, loop: "loop" },
 
-  /* ---- USED BY cat-items.js → ROOM_SPOTS "with-toy". Batting at a toy.
-     If the pack has no playing row, leave it null — the cat just sits
-     next to the toy instead, which reads fine. ---- */
+  /* ---- CURRENTLY UNUSED. Toys are decoration (a cat standing on a
+     mouse toy would hide it completely). Kept in case you want a
+     playing spot later. ---- */
   "play":        { row: null, from: 0, count: 4, fps: 8, loop: "loop" },
 
   /* ---- Optional extras. Nice to have, not required. Fill in later
      (or delete the lines entirely — nothing depends on them). ---- */
-  /* USED BY cat-items.js → ROOM_SPOTS "in-carrier". Also a good all-round
+  /* USED BY cat-items.js → ROOM_SPOTS "lounge-right". A good all-round
      pose, so it is worth filling in early. */
   "sit-front":   { row: null, from: 0, count: 1, fps: 0, loop: "single-still" },
+  /* USED BY cat-items.js → ROOM_SPOTS "lounge-left". */
   "lying":       { row: null, from: 0, count: 1, fps: 0, loop: "single-still" },
+  /* USED BY cat-items.js → ROOM_SPOTS "lounge-back". */
   "stretch":     { row: null, from: 0, count: 6, fps: 7, loop: "once" },
 
   /* =====================================================================

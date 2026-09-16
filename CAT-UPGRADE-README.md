@@ -295,38 +295,40 @@ Short version, full reasoning in **`CREDITS.md`**:
 I'm not a lawyer and that's a reading, not legal advice — which is exactly why
 asking is worth ten minutes.
 
-### ✅ Scratching posts and carriers: added
+### ✅ Posts and carriers: added, and decorative only
 
-The `at-post` spot works now. All 7 posts and both carriers are in
-`cat-items.js` and appear in the shop:
+All 7 posts and both carriers are in the shop. Prices are placeholders:
+posts 25–35 🪙 with the **tree house at 60**, carriers 35 🪙 each.
 
-| | |
-|---|---|
-| Posts | small brown 25 🪙, big brown 35, green / tan / pink / purple 30, **tree house 60** |
-| Carriers | pink and green, 35 🪙 each |
+You were right about the cat not sitting on them, so **posts, carriers, toys
+and plants are now pure decoration** — drawn in the room, never stood on. The
+reasoning is written into `cat-items.js` so nobody undoes it later: a carrier is
+small enough that a cat would hide it completely, and a toy even more so. You'd
+be paying coins for something and then not being able to see it, which is the
+opposite of what a decorating game should do.
 
-Prices are placeholders — change them freely.
+I applied the same logic to **toys**, which you didn't mention — a cat standing
+on a mouse toy would cover it entirely. Same problem, so same answer. Say the
+word if you'd rather they stayed interactive.
 
-**I had to guess your filenames**, following the naming style already in the
-file (`sbrown_post.png`, `treehouse_post.png`, `pink_carrier.png`…). The full
-list is in `items/README.md`. Either rename your files to match, or send me your
-real names and I'll change `cat-items.js` — whichever is less work.
+Your note about some post artwork maybe working with a cat on top is recorded in
+`cat-items.js` with the exact two-line change that switches it back on, and the
+`itch-r` scratching pose is still in `cat-frames.js` waiting for it. Worth a try
+once the real art is in — it's easy to undo.
 
-This also added **two more places for cats to be**: `in-carrier` (the cat sits
-inside) and `with-toy` (batting at a toy — toys were buyable before but did
-nothing at all, which I should have spotted earlier). That takes the room to
-**7 spots**, so four cats now spread out properly instead of crowding.
+**Cats now have 4 always-available spots**, deliberately matching the 4 cat
+colours. That means even someone who owns every cat and has bought no furniture
+at all still gets a proper spot for each one — the "line them up on the floor"
+fallback never has to trigger. (A test catches this: if you ever add a 5th
+colour, it'll tell you to add a 5th spot.)
 
-Plants deliberately have no spot — they are pure decoration.
+I verified across 12 consecutive visits, in a bare room, a decoration-only room,
+and a fully furnished one, that no cat ever overlaps another and no cat ever
+lands on top of a decoration.
 
-**Two new automated checks** now run against this, so the gap that let `at-post`
-sit dead can't come back quietly:
-
-- every room spot's `needs` must match a real item category
-- every room spot's pose must exist in `cat-frames.js`
-
-If you add a spot that needs something nonexistent, the test fails instead of
-the spot silently never happening.
+**Filenames:** I had to guess them (`sbrown_post.png`, `treehouse_post.png`,
+`pink_carrier.png`…). Full list in `items/README.md` — rename your files to
+match, or send me the real names.
 
 ---
 
