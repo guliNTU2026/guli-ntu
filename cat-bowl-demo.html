@@ -169,6 +169,9 @@
     <button class="ghost" id="placePurple">Place purple bowl</button>
     <button class="ghost" id="placeWater">Place water</button>
     <button class="ghost" id="placeBed">Place bed</button>
+    <button class="ghost" id="placePost">Place post</button>
+    <button class="ghost" id="placeCarrier">Place carrier</button>
+    <button class="ghost" id="placeToy">Place toy</button>
     <button class="ghost" id="clearRoom">Empty the room</button>
     <button class="ghost" id="wipe">Reset the cat only</button>
   </div>
@@ -404,6 +407,9 @@ el('placeGreen').addEventListener('click',  function(){ place('bowl',  'bowl-gre
 el('placePurple').addEventListener('click', function(){ place('bowl',  'bowl-purple'); });
 el('placeWater').addEventListener('click',  function(){ place('water', 'water'); });
 el('placeBed').addEventListener('click',    function(){ place('bed',   'bed-red'); });
+el('placePost').addEventListener('click',   function(){ place('post',    CAT_POSTS[0].id); });
+el('placeCarrier').addEventListener('click',function(){ place('carrier', CAT_CARRIERS[0].id); });
+el('placeToy').addEventListener('click',    function(){ place('toy',     CAT_TOYS[0].id); });
 
 el('clearRoom').addEventListener('click', function(){
   var cat = CatState.load(pretendNow());

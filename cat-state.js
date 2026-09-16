@@ -497,12 +497,19 @@ const CatState = (function () {
 
     /* Everything currently purchasable, seasons applied. */
     catalogue(when) {
+      /* Every list of buyable things from cat-items.js.
+         ⚠️ IF YOU ADD A NEW LIST to cat-items.js (say CAT_RUGS), add one
+         line here too or the shop will never show it. The `typeof` check
+         means a list that does not exist is skipped instead of crashing
+         the page, which is why a missing line fails silently. */
       const groups = [
         typeof CAT_BOWLS       !== "undefined" ? CAT_BOWLS       : [],
         typeof CAT_FOODS       !== "undefined" ? CAT_FOODS       : [],
         typeof CAT_WATER       !== "undefined" ? CAT_WATER       : [],
         typeof CAT_TOYS        !== "undefined" ? CAT_TOYS        : [],
         typeof CAT_BEDS        !== "undefined" ? CAT_BEDS        : [],
+        typeof CAT_POSTS       !== "undefined" ? CAT_POSTS       : [],
+        typeof CAT_CARRIERS    !== "undefined" ? CAT_CARRIERS    : [],
         typeof CAT_PLANTS      !== "undefined" ? CAT_PLANTS      : [],
         typeof CAT_ACCESSORIES !== "undefined" ? CAT_ACCESSORIES : [],
       ];

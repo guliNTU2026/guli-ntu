@@ -187,6 +187,32 @@ const CAT_BEDS = [
 
 
 /* =====================================================================
+   SCRATCHING POSTS — you have 7. The cat scratches at whichever one is
+   placed in the room (the "at-post" spot further down).
+   The tree house is the big showpiece, so it is priced higher; the small
+   brown one is the cheap starter. ✏️ change any price freely.
+   ===================================================================== */
+const CAT_POSTS = [
+  { id:"post-sbrown",    zh:"小棕貓抓柱", en:"Small brown post", price:25, file:"sbrown_post.png",    category:"post" },
+  { id:"post-bbrown",    zh:"大棕貓抓柱", en:"Big brown post",   price:35, file:"bbrown_post.png",    category:"post" },
+  { id:"post-green",     zh:"綠貓抓柱",   en:"Green post",       price:30, file:"green_post.png",     category:"post" },
+  { id:"post-tan",       zh:"米色貓抓柱", en:"Tan post",         price:30, file:"tan_post.png",       category:"post" },
+  { id:"post-pink",      zh:"粉貓抓柱",   en:"Pink post",        price:30, file:"pink_post.png",      category:"post" },
+  { id:"post-purple",    zh:"紫貓抓柱",   en:"Purple post",      price:30, file:"purple_post.png",    category:"post" },
+  { id:"post-treehouse", zh:"貓跳台",     en:"Tree house",       price:60, file:"treehouse_post.png", category:"post" },
+];
+
+
+/* =====================================================================
+   CARRIERS — the cat sits inside one. Two colours.
+   ===================================================================== */
+const CAT_CARRIERS = [
+  { id:"carrier-pink",  zh:"粉色提籠", en:"Pink carrier",  price:35, file:"pink_carrier.png",  category:"carrier" },
+  { id:"carrier-green", zh:"綠色提籠", en:"Green carrier", price:35, file:"green_carrier.png", category:"carrier" },
+];
+
+
+/* =====================================================================
    PLANTS — room decoration (add files as you crop them).
    ===================================================================== */
 const CAT_PLANTS = [
@@ -253,29 +279,32 @@ const CAT_ACCESSORIES = [
    x,y are % of the room (0-100). pose must match a cat action name.
    ===================================================================== */
 const ROOM_SPOTS = [
-  { id:"by-bowl",  x:22, y:70, needs:"bowl",  pose:"eat-front" },
-  { id:"at-water", x:38, y:74, needs:"water", pose:"drink-front" },
-  { id:"in-bed",   x:72, y:68, needs:"bed",   pose:"sleep-lay-front-l" },
-  { id:"at-post",  x:86, y:38, needs:"post",  pose:"itch-r" },
-  { id:"center",   x:52, y:76, needs:null,    pose:"wash-sit" },  /* always valid fallback */
+  { id:"by-bowl",    x:20, y:72, needs:"bowl",    pose:"eat-front" },
+  { id:"at-water",   x:36, y:76, needs:"water",   pose:"drink-front" },
+  { id:"in-bed",     x:74, y:70, needs:"bed",     pose:"sleep-lay-front-l" },
+  { id:"at-post",    x:86, y:36, needs:"post",    pose:"itch-r" },
+  { id:"in-carrier", x:14, y:42, needs:"carrier", pose:"sit-front" },
+  { id:"with-toy",   x:60, y:50, needs:"toy",     pose:"play" },
+  { id:"center",     x:48, y:80, needs:null,      pose:"wash-sit" },  /* always valid fallback */
 ];
 
-/* ⚠️ NOTE ABOUT "at-post"
-   That spot needs an item whose category is "post" — a scratching post.
-   There is no scratching-post item anywhere in this file yet, so right
-   now the cat can never stand there and the spot is simply skipped.
+/* HOW A SPOT BECOMES AVAILABLE
+   A spot only counts if the thing it "needs" is actually placed in the
+   room. The word after `needs:` must match an item's `category:`.
+   So "at-post" switches on the moment a scratching post is placed,
+   "in-carrier" when a carrier is placed, and so on.
 
-   Nothing is broken; it just never happens. To switch it on, crop a
-   scratching-post PNG into items/ and add a section like this:
+   "center" needs nothing, so there is ALWAYS at least one place to
+   stand — an empty room still works.
 
-       const CAT_POSTS = [
-         { id:"post-tan", zh:"貓抓柱", en:"Scratching post",
-           price:30, file:"tan_post.png", category:"post" },
-       ];
+   Every cat the visitor owns gets its OWN spot, so the more furniture
+   they buy, the more spread out the room looks. With 7 spots here there
+   is room for plenty of cats before any of them have to line up on the
+   floor. ✏️ Move a spot by changing its x,y (percentages of the room,
+   0-100). Delete a line and that spot simply stops being used.
 
-   ...then tell me and I will add it to the shop list. (If you do not
-   have post art, you can instead delete the "at-post" line above — the
-   cat will just use the other spots.)
+   NOTE: plants have no spot on purpose — they are pure decoration and
+   the cat does not interact with them.
 
    NOTE ABOUT "drink-front"
    That pose is not in cat-frames.js with a real row yet, so the cat will

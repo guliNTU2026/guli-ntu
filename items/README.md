@@ -21,6 +21,31 @@ room floor as an obvious white rectangle. It looks broken. Fix it by deleting
 the white background in any image editor and re-saving as PNG, or pick a
 different item.
 
+## The filenames I have assumed
+
+`cat-items.js` names every file it expects. For the newest items I had to
+**guess** the filenames, following the naming style already used by the rest
+(`tan_bed.png`, `dgreen_bed.png`, and so on). Either rename your files to match
+this list, or tell me your real names and I will change `cat-items.js` instead —
+whichever is less work for you.
+
+**Scratching posts (7):**
+
+| Your description | Expected filename |
+|---|---|
+| small brown | `sbrown_post.png` |
+| big brown | `bbrown_post.png` |
+| green | `green_post.png` |
+| tan | `tan_post.png` |
+| pink | `pink_post.png` |
+| purple | `purple_post.png` |
+| tree house | `treehouse_post.png` |
+
+**Carriers (2):** `pink_carrier.png`, `green_carrier.png`
+
+Prices are placeholders: posts are 25–35 coins, with the tree house at 60 as
+the showpiece, and carriers at 35. All easy to change in `cat-items.js`.
+
 ## Adding a new item later
 
 1. Save the picture here, e.g. `orange_bed.png`.

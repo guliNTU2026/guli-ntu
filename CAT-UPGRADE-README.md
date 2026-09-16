@@ -73,7 +73,7 @@ it, but in short:
 
 - **`sprites/`** — the four cat sheets, original filenames unchanged
   (`cat 1 16x16 animation.png`, `cat 2 …`, `cat 4 …`, `cat 10 …`)
-- **`items/`** — the 55 item PNGs (beds, bowls, toys, collars, hats…)
+- **`items/`** — the 64 item PNGs (beds, bowls, posts, carriers, toys, collars, hats…)
 
 You can upload them by dragging them onto the folder in GitHub, or however you
 normally add files to the site.
@@ -295,15 +295,38 @@ Short version, full reasoning in **`CREDITS.md`**:
 I'm not a lawyer and that's a reading, not legal advice — which is exactly why
 asking is worth ten minutes.
 
-### ⚠️ One gap I found: there is no scratching post
+### ✅ Scratching posts and carriers: added
 
-`ROOM_SPOTS` has an `at-post` spot where the cat scratches — but **no
-scratching-post item exists anywhere in `cat-items.js`**, in any category. So
-that spot can never become valid and is silently skipped.
+The `at-post` spot works now. All 7 posts and both carriers are in
+`cat-items.js` and appear in the shop:
 
-Nothing is broken. But if you want it, crop a post PNG into `items/` and tell
-me; there's a comment in `cat-items.js` showing exactly what to add. (Or I can
-delete the spot.)
+| | |
+|---|---|
+| Posts | small brown 25 🪙, big brown 35, green / tan / pink / purple 30, **tree house 60** |
+| Carriers | pink and green, 35 🪙 each |
+
+Prices are placeholders — change them freely.
+
+**I had to guess your filenames**, following the naming style already in the
+file (`sbrown_post.png`, `treehouse_post.png`, `pink_carrier.png`…). The full
+list is in `items/README.md`. Either rename your files to match, or send me your
+real names and I'll change `cat-items.js` — whichever is less work.
+
+This also added **two more places for cats to be**: `in-carrier` (the cat sits
+inside) and `with-toy` (batting at a toy — toys were buyable before but did
+nothing at all, which I should have spotted earlier). That takes the room to
+**7 spots**, so four cats now spread out properly instead of crowding.
+
+Plants deliberately have no spot — they are pure decoration.
+
+**Two new automated checks** now run against this, so the gap that let `at-post`
+sit dead can't come back quietly:
+
+- every room spot's `needs` must match a real item category
+- every room spot's pose must exist in `cat-frames.js`
+
+If you add a spot that needs something nonexistent, the test fails instead of
+the spot silently never happening.
 
 ---
 

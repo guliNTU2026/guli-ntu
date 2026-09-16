@@ -132,8 +132,15 @@ const CAT_FRAMES = {
      so it is worth filling in first. ---- */
   "wash-sit":    { row: null, from: 0, count: 6, fps: 6, loop: "loop" },
 
+  /* ---- USED BY cat-items.js → ROOM_SPOTS "with-toy". Batting at a toy.
+     If the pack has no playing row, leave it null — the cat just sits
+     next to the toy instead, which reads fine. ---- */
+  "play":        { row: null, from: 0, count: 4, fps: 8, loop: "loop" },
+
   /* ---- Optional extras. Nice to have, not required. Fill in later
      (or delete the lines entirely — nothing depends on them). ---- */
+  /* USED BY cat-items.js → ROOM_SPOTS "in-carrier". Also a good all-round
+     pose, so it is worth filling in early. */
   "sit-front":   { row: null, from: 0, count: 1, fps: 0, loop: "single-still" },
   "lying":       { row: null, from: 0, count: 1, fps: 0, loop: "single-still" },
   "stretch":     { row: null, from: 0, count: 6, fps: 7, loop: "once" },
