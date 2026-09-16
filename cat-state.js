@@ -437,9 +437,12 @@ const CatState = (function () {
       const owned = this.ownedCats(cat);
       if (!owned.length) return [];
 
-      /* Which spots are usable right now? */
+      /* Which spots are usable right now? The room's own spots (where the
+         needed furniture is present), plus any perches the furniture
+         itself offers — sitting on top of the tree house, and so on. */
       const placed = (cat && cat.placed) ? cat.placed : {};
-      const usable = ROOM_SPOTS.filter(sp => !sp.needs || placed[sp.needs]);
+      const usable = ROOM_SPOTS.filter(sp => !sp.needs || placed[sp.needs])
+                               .concat(this.perchSpots(cat));
       if (!usable.length) return [];
 
       /* Rotate the starting point so the arrangement changes per visit. */
@@ -463,6 +466,42 @@ const CatState = (function () {
                  x: Math.round(100 * overflowSeen / (overflow + 1)),
                  y: 88, pose: "idle", spot: "floor" };
       });
+    },
+
+    /* ----------------------------------------------------------------
+       PERCHES — places to sit that come from the furniture itself.
+
+       A decoration (currently only the tree house) can declare a
+       `perches:` list in cat-items.js, meaning "cats can sit HERE on
+       me". Each one becomes an extra spot, positioned relative to where
+       that item is drawn.
+
+       Furniture with no `perches` produces nothing, which is why every
+       other item stays plain decoration. Returns spots in the same shape
+       as ROOM_SPOTS so the placing code cannot tell the difference.
+       ---------------------------------------------------------------- */
+    perchSpots(cat) {
+      if (typeof ROOM_DECOR === "undefined") return [];
+      if (!cat || !cat.placed) return [];
+      const items = this.allItems();
+      const out = [];
+
+      ROOM_DECOR.forEach(slot => {
+        const placedId = cat.placed[slot.needs];
+        if (!placedId) return;
+        const item = items.find(i => i.id === placedId);
+        if (!item || !item.perches || !item.perches.length) return;
+
+        item.perches.forEach((perch, n) => {
+          /* Clamp to the room, so a mistyped offset parks a cat at the
+             edge instead of somewhere off-screen where it looks lost. */
+          const x = Math.min(100, Math.max(0, slot.x + (perch.dx || 0)));
+          const y = Math.min(100, Math.max(0, slot.y + (perch.dy || 0)));
+          out.push({ id: "on-" + item.id + "-" + n, x: x, y: y,
+                     needs: null, pose: perch.pose || "sit-front" });
+        });
+      });
+      return out;
     },
 
     /* ----------------------------------------------------------------

@@ -22,7 +22,7 @@ Nothing goes live until you are happy.
 | 1 | Show one pixel-art frame on screen; set up the editable animation list | ✅ **done — test it now** |
 | 1.5 | Feeding loop (food **and** water) + seasonal items | ✅ **done — test it now** |
 | 1.6 | Owning several cats at once, and where they stand | ✅ **done — test it now** |
-| 2 | The cat animates in place; four colours to adopt | ⏳ needs `cat-frames.js` filled in |
+| 2 | The cat animates in place; four colours to adopt | ✅ **frame map complete — needs the PNGs** |
 | 3 | The room, the shop, the furniture | ⏳ needs the item PNGs uploaded |
 | 4 | "The cat moved while you were away" | ⏳ |
 | 5 | Seasonal photo frame for Valentine's | ⏳ (holiday itself is already added) |
@@ -83,38 +83,47 @@ normally add files to the site.
 > that item will show up as an ugly white box on the room floor. Tell me which
 > ones and we will deal with them.
 
-### 2. Fill in `cat-frames.js` using the workbench
+### 2. ~~Fill in `cat-frames.js`~~ ✅ DONE — thank you, that was the blocker
 
-Your `sprite-inventory-TEMPLATE.md` came back **blank**, so I do not know which
-row is eating, which is sleeping, and so on. Rather than guess — a wrong guess
-means the cat scratches when it should sleep — I built you a tool.
+Your inventory was exactly what was needed. All **32 poses** now point at real
+rows. Verified: nothing runs past the edge of the sheet, and the hiss and sad
+rows are correctly absent.
 
-**Double-click `sprite-lab.html`.** It opens in your browser and it:
+What each spot in the room now plays:
 
-1. lets you pick a cat PNG **off your own computer** (nothing is uploaded, not
-   to the website and not to any AI),
-2. checks the picture divides evenly by 32 (the check that prevents most bugs),
-3. lists all 53 rows and **counts the frames in each one for you**,
-4. plays any row so you can *watch* what the cat is doing,
-5. prints the finished line, ready to copy and paste into `cat-frames.js`.
+| Where | Animation | Row | Frames |
+|---|---|---|---|
+| At the bowl | `eat-front` | 20 | 8 |
+| At the water | `drink-front` | 24 | 8 |
+| In the bed | `sleep-lay-front-l` | 18 | 2, slow |
+| Lounging left | `lying` | 2 | still |
+| Lounging right | `sit-front` | 0 | still |
+| Lounging back | `yawn-sit` | 32 | 8 |
+| Centre | `wash-sit` | 36 | 9 |
 
-Work through these five, which is all Step 2 and Step 3 need:
+**Three things I had to decide, all easy to change:**
 
-| Nickname to fill in | What to look for |
-|---|---|
-| `idle` | the cat just sitting there (probably row 0 already — confirm it) |
-| `wash-sit` | sitting and licking itself — **do this one first**, it is the fallback |
-| `eat-front` | head down at a bowl |
-| `sleep-lay-front-l` | curled up asleep |
-| `itch-r` | scratching, facing right |
+1. **There is no drinking animation in the pack.** The water cat borrows an
+   eating one — head down at a dish, which reads fine. I used the front-left
+   angle (row 24) rather than plain front (row 20) so the water cat doesn't look
+   identical to the food-bowl cat next to it. Change one number if you disagree.
+2. **There is no stretch either**, so the third lounging spot yawns instead
+   (row 32). Honestly nicer.
+3. **Your list has some names twice** — `meow-sit` on rows 28 *and* 29,
+   `yawn-sit` on 32 *and* 33, `wash-sit` on 36 *and* 37. Those are the
+   left/right facing pair. I used the first of each; if a cat ends up facing the
+   wrong way once you see it, swap to the other row. This is written into
+   `cat-frames.js` so you don't have to remember it.
 
-Roughly ten minutes. Any line you do not fill in stays `row: null`, which
-simply means "the cat uses its normal idle pose instead" — nothing breaks, it
-is just less lively. You can come back and finish later.
+Eating has **eight** angles (rows 20–27) and sleeping **eight** variants
+(rows 12–19), all recorded — so if a cat looks wrong at its bowl, there are
+seven alternatives with the same frame count.
 
-> 🚫 The sheet also contains an **angry hiss** (about rows 41–42) and a **sad
-> cat** (about row 43). The workbench shades them orange. We are deliberately
-> not using them — see "Why there is no sad cat" below.
+> ⚠️ **One mismatch to check.** You labelled the sheet `cat 1.png` and called it
+> the **gray** cat. `cat-items.js` currently expects `cat 1 16x16 animation.png`
+> and calls it the **black** cat. Two different things to confirm: the real
+> filename, and which colour is which. Getting the colour labels crossed would
+> just mean the shop names don't match the cats — harmless but confusing.
 
 ### 3. Two small things on the art
 

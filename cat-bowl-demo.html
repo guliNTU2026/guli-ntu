@@ -168,6 +168,37 @@
   </p>
 </div>
 
+<h2>Cats on furniture · 貓咪坐在家具上</h2>
+<div class="card">
+  <p class="muted" style="margin:0 0 8px">
+    The tree house lets cats sit <b>on</b> it. Place it, then nudge each perch
+    until the cat looks right on the artwork, and paste the printed line back
+    into <code>cat-items.js</code>. This is done by eye — no maths.<br>
+    用方向鍵把貓移到正確位置，再把下面那行貼回 <code>cat-items.js</code>。
+  </p>
+  <div class="row">
+    <button class="ghost" id="placeTree">Place tree house</button>
+    <label style="font-size:13.5px;font-weight:700">Perch
+      <select id="perchN" style="font-family:inherit;font-size:14px;padding:5px;
+        border:2px solid var(--ink);border-radius:8px;background:var(--card);color:var(--ink)"></select>
+    </label>
+  </div>
+  <div class="row" style="margin-top:6px">
+    <button class="ghost" data-nudge="0,-2">↑</button>
+    <button class="ghost" data-nudge="0,2">↓</button>
+    <button class="ghost" data-nudge="-2,0">←</button>
+    <button class="ghost" data-nudge="2,0">→</button>
+    <button class="ghost" id="perchOff">✓ Done</button>
+    <label style="font-size:13.5px;font-weight:700">Pose
+      <select id="perchPose" style="font-family:inherit;font-size:14px;padding:5px;
+        border:2px solid var(--ink);border-radius:8px;background:var(--card);color:var(--ink)"></select>
+    </label>
+  </div>
+  <div class="out" id="perchLine" style="font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:13px;background:#2C241D;color:#F7E9C9;padding:9px 11px;border-radius:9px;
+    margin-top:9px;overflow-x:auto;white-space:pre">Place the tree house first.</div>
+</div>
+
 <h2>Set up · 設定</h2>
 <div class="card">
   <div class="row">
@@ -209,6 +240,7 @@
    ===================================================================== */
 var HOUR = 60 * 60 * 1000;
 var skewHours = 0;                        // hours we are pretending have passed
+var tuningPerch = false;                  // true while the perch tuner is in use
 function pretendNow(){ return Date.now() + skewHours * HOUR; }
 function el(id){ return document.getElementById(id); }
 
@@ -316,6 +348,21 @@ function paintCats(cat){
   });
 
   var spots = CatState.arrangeCats(cat);
+
+  /* PERCH PREVIEW.
+     While you are tuning a perch, one cat is pinned to it so you can
+     actually see what you are positioning. Without this the tuner is
+     useless whenever the rotation happens to seat nobody there — which
+     is most of the time, since there are more spots than cats. */
+  if (tuningPerch){
+    var per = CatState.perchSpots(cat);
+    var sel = parseInt(el('perchN').value, 10) || 0;
+    if (per[sel] && spots.length){
+      spots[0] = { colour: spots[0].colour, file: spots[0].file,
+                   x: per[sel].x, y: per[sel].y,
+                   pose: per[sel].pose, spot: per[sel].id };
+    }
+  }
   spots.forEach(function(s){
     var colour = CAT_COLORS.find(function(c){ return c.id === s.colour; }) || {};
     var d = document.createElement('div');
@@ -438,6 +485,72 @@ el('placeBed').addEventListener('click',    function(){ place('bed',   'bed-red'
 el('placePost').addEventListener('click',   function(){ place('post',    CAT_POSTS[0].id); });
 el('placeCarrier').addEventListener('click',function(){ place('carrier', CAT_CARRIERS[0].id); });
 el('placeToy').addEventListener('click',    function(){ place('toy',     CAT_TOYS[0].id); });
+el('placeTree').addEventListener('click',   function(){
+  tuningPerch = true;                       /* pin a cat to the perch so it is visible */
+  place('post', 'post-treehouse');
+  paintPerch();
+});
+
+/* ---------------------------------------------------------------------
+   PERCH TUNER — nudges a perch around and prints the line to paste.
+   It edits the live CAT_POSTS data in memory, so the room updates as you
+   press the arrows. Nothing is saved to the file; you copy the line.
+   --------------------------------------------------------------------- */
+function treeHouse(){ return CAT_POSTS.find(function(p){ return p.id === 'post-treehouse'; }); }
+
+(function fillPerchMenus(){
+  var t = treeHouse();
+  if (!t || !t.perches) return;
+  el('perchN').innerHTML = t.perches.map(function(_, i){
+    return '<option value="' + i + '">' + (i + 1) + ' of ' + t.perches.length + '</option>';
+  }).join('');
+  /* every pose the frame map knows about */
+  el('perchPose').innerHTML = Object.keys(CAT_FRAMES).map(function(k){
+    return '<option value="' + k + '">' + k + '</option>';
+  }).join('');
+})();
+
+function currentPerch(){
+  var t = treeHouse();
+  if (!t || !t.perches) return null;
+  return t.perches[parseInt(el('perchN').value, 10) || 0];
+}
+
+function paintPerch(){
+  var t = treeHouse();
+  if (!t || !t.perches){ return; }
+  var p = currentPerch();
+  if (!p) return;
+  el('perchPose').value = p.pose;
+  el('perchLine').textContent =
+    '{ dx:' + p.dx + ', dy:' + p.dy + ', pose:"' + p.pose + '" },';
+}
+
+Array.prototype.forEach.call(document.querySelectorAll('[data-nudge]'), function(b){
+  b.addEventListener('click', function(){
+    var p = currentPerch(); if (!p) return;
+    var d = this.getAttribute('data-nudge').split(',');
+    p.dx += parseInt(d[0], 10);
+    p.dy += parseInt(d[1], 10);
+    tuningPerch = true;
+    paint('Nudged — copy the line below when it looks right.', '');
+    paintPerch();
+  });
+});
+el('perchOff').addEventListener('click', function(){
+  tuningPerch = false;
+  paint('Back to the normal room — cats use the perch on some visits.', '');
+});
+el('perchN').addEventListener('change', function(){
+  tuningPerch = true; paint('Showing perch ' + (parseInt(this.value,10)+1) + '.', ''); paintPerch();
+});
+el('perchPose').addEventListener('change', function(){
+  var p = currentPerch(); if (!p) return;
+  p.pose = this.value;
+  tuningPerch = true;
+  paint('Pose changed.', '');
+  paintPerch();
+});
 
 el('clearRoom').addEventListener('click', function(){
   var cat = CatState.load(pretendNow());
@@ -474,6 +587,7 @@ el('wipe').addEventListener('click', function(){
 })();
 
 paint('', '');
+paintPerch();
 </script>
 </body>
 </html>

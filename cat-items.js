@@ -199,8 +199,49 @@ const CAT_POSTS = [
   { id:"post-tan",       zh:"米色貓抓柱", en:"Tan post",         price:30, file:"tan_post.png",       category:"post" },
   { id:"post-pink",      zh:"粉貓抓柱",   en:"Pink post",        price:30, file:"pink_post.png",      category:"post" },
   { id:"post-purple",    zh:"紫貓抓柱",   en:"Purple post",      price:30, file:"purple_post.png",    category:"post" },
-  { id:"post-treehouse", zh:"貓跳台",     en:"Tree house",       price:60, file:"treehouse_post.png", category:"post" },
+  { id:"post-treehouse", zh:"貓跳台",     en:"Tree house",       price:60, file:"treehouse_post.png", category:"post",
+    /* ✏️ CATS ON TOP — see the long note below. These two numbers per
+       perch are the only thing you tune, and they are a first guess
+       until the real artwork is on screen. */
+    perches:[
+      { dx:0,  dy:-26, pose:"curl-sleep" },   /* curled up on the top platform */
+      { dx:-6, dy:-10, pose:"sit-front"  },   /* sitting in the cubby below */
+    ] },
 ];
+
+
+/* =====================================================================
+   PUTTING CATS ON THE FURNITURE ("perches")
+   =====================================================================
+   Any decoration above can let cats sit ON it by adding a `perches:`
+   list, like the tree house does. Each entry creates one place a cat can
+   be. Leave `perches` off entirely and the item is plain decoration —
+   which is what all the others do.
+
+   Each perch has exactly three things:
+     dx, dy  how far from the item's own position the cat sits, in
+             percent of the room. NEGATIVE dy is UPWARDS. So dy:-26
+             means "26% of the room height above where the post sits",
+             i.e. up on the top platform.
+     pose    any pose name from cat-frames.js. "curl-sleep",
+             "sit-front", "lying" and "itch-r" all suit furniture.
+
+   HOW TO TUNE IT (you do NOT do this by maths)
+   Open cat-bowl-demo.html, place the tree house, and use the arrow
+   buttons in the "Cats on furniture" box. They nudge the cat around on
+   screen and print the finished dx/dy line for you to paste back here.
+   About a minute per perch, done by eye.
+
+   WHY IT IS SAFE
+   If the numbers are wrong the cat just sits in a slightly odd place —
+   it cannot crash anything, and a perch is never the ONLY spot a cat
+   can use. Delete the `perches:` line and everything reverts to plain
+   decoration instantly.
+
+   ⚠️ Do this LAST, once the artwork is actually in items/. Positioning a
+   cat against a picture you cannot see yet is guesswork; positioning it
+   against one you CAN see takes a minute.
+   ===================================================================== */
 
 
 /* =====================================================================
@@ -294,7 +335,7 @@ const ROOM_SPOTS = [
      add a 5th spot here too. --- */
   { id:"lounge-left",  x:30, y:56, needs:null,    pose:"lying" },
   { id:"lounge-right", x:66, y:86, needs:null,    pose:"sit-front" },
-  { id:"lounge-back",  x:40, y:38, needs:null,    pose:"stretch" },
+  { id:"lounge-back",  x:40, y:38, needs:null,    pose:"yawn-sit" },
   { id:"center",       x:50, y:70, needs:null,    pose:"wash-sit" },
 ];
 
