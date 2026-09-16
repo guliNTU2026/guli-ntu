@@ -57,6 +57,14 @@ const CatRoom = (function () {
     switched:  { zh: "換貓咪囉～",   en: "Switched!" },
     emptyOk:   { zh: "空的也沒關係 🙂", en: "Empty is perfectly fine 🙂" },
     nextDrop:  { zh: "約 {h} 小時後少一格", en: "Drops a level in about {h}h" },
+    petHint:   { zh: "點貓咪摸摸牠 · 點玩具陪牠玩", en: "Tap a cat to pet it · tap a toy to play" },
+    purr:      { zh: "呼嚕呼嚕～", en: "Purr…" },
+    playing:   { zh: "玩得好開心！", en: "So much fun!" },
+    dressing:  { zh: "正在打扮：", en: "Dressing: " },
+    dressHint: { zh: "每隻貓可以穿不同的配件，去「貓咪」分頁換一隻。",
+                 en: "Each cat wears its own things — switch cats in the Cats tab." },
+    appetite:  { zh: "{n} 隻貓，吃得比較快", en: "{n} cats — the bowl empties faster" },
+    tipTitle:  { zh: "今日小知識", en: "Today's tip" },
   };
 
   /* ✏️ EDIT HERE — the little headings inside each shop tab.
@@ -153,7 +161,22 @@ const CatRoom = (function () {
     letter-spacing:.04em;display:flex;align-items:center;gap:8px}
   .cr-group h4::after{content:"";flex:1;height:2px;background:rgba(58,48,41,.16);border-radius:2px}
   .cr-note{font-size:12px;opacity:.72;text-align:center;margin-top:12px;line-height:1.6}
-  @media (prefers-reduced-motion:reduce){ .cr-cat{animation:none} }
+  .cr-cat{cursor:pointer}
+  .cr-thing.cr-playable{cursor:pointer}
+  /* the little heart that floats up when you pet a cat */
+  .cr-pop{position:absolute;transform:translate(-50%,-50%);z-index:400;
+    font-size:20px;pointer-events:none;animation:crPop 1.1s ease-out forwards}
+  @keyframes crPop{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}
+    25%{opacity:1;transform:translate(-50%,-110%) scale(1.15)}
+    100%{opacity:0;transform:translate(-50%,-230%) scale(1)}}
+  .cr-hint{font-size:12px;opacity:.7;text-align:center;margin-top:7px}
+  /* today's nutrition tip, from foods-data.js */
+  .cr-tip{margin-top:12px;border:2.5px solid var(--ink,#3A3029);border-radius:14px;
+    background:var(--card,#fff);box-shadow:3px 3px 0 var(--ink,#3A3029);padding:11px 13px}
+  .cr-tip b{display:block;font-size:12px;opacity:.7;margin-bottom:3px}
+  .cr-tip span{font-size:13.5px;font-weight:700;line-height:1.6}
+  @media (prefers-reduced-motion:reduce){ .cr-cat{animation:none} .cr-pop{animation:none;opacity:0} }
   `;
 
   /* =====================================================================
@@ -267,7 +290,14 @@ const CatRoom = (function () {
     /* ---- decoration ---- */
     CatState.decorLayout(cat).forEach(d => {
       const slot = ROOM_DECOR.find(r => r.needs === d.category) || {};
-      addThing(room, d.file, d.x, d.y, slot.size || 16, roomW);
+      const el = addThing(room, d.file, d.x, d.y, slot.size || 16, roomW);
+      /* toys can be played with; other decoration is just scenery */
+      if (d.category === "toy") {
+        el.classList.add("cr-playable");
+        el.addEventListener("click", function (ev) {
+          ev.stopPropagation(); playWithToy(d.x, d.y);
+        });
+      }
     });
 
     /* ---- the cats ---- */
@@ -288,7 +318,9 @@ const CatRoom = (function () {
       probe(url, function (ok) {
         if (ok) {
           el.style.cssText += catSpriteStyle(colour, frame, frame.from, catPx);
-          cats.push({ el: el, colour: colour, frame: frame, i: 0, t: 0, size: catPx });
+          const c = { el: el, colour: colour, frame: frame, base: frame, i: 0, t: 0, size: catPx };
+          cats.push(c);
+          el.addEventListener("click", function (ev) { ev.stopPropagation(); petCat(c); });
         } else {
           /* no sheet uploaded yet — a friendly stand-in */
           el.className = "cr-cat cr-catghost";
@@ -297,11 +329,16 @@ const CatRoom = (function () {
           el.style.fontSize = Math.round(catPx * 0.4) + "px";
           el.style.background = dotColour(colour.id);
           el.textContent = (colour.en || "?").charAt(0);
+          el.addEventListener("click", function (ev) {
+            ev.stopPropagation();
+            pop(room, spot.x, spot.y, "💛");
+            say(tx("purr"));
+          });
         }
       });
 
-      /* anything worn sits just above the cat */
-      if (spot.colour === cat.active) paintWorn(room, cat, spot, catPx);
+      /* each cat wears its OWN accessories, so all of them show */
+      paintWorn(room, cat, spot, catPx);
     });
 
     startTicker();
@@ -321,13 +358,14 @@ const CatRoom = (function () {
     const url = "items/" + encodeURIComponent(file);
     probe(url, function (ok) {
       if (ok) el.style.backgroundImage = `url('${url}')`;
-      else el.className = "cr-thing cr-ghost";   /* stand-in until the PNG exists */
+      else el.classList.add("cr-ghost");   /* stand-in until the PNG exists */
     });
+    return el;
   }
 
   /* Accessories worn by the cat that is currently out. */
   function paintWorn(room, cat, spot, catPx) {
-    (cat.worn || []).forEach(id => {
+    CatState.wornBy(cat, spot.colour).forEach(id => {
       const item = CatState.item(id);
       if (!item) return;
       const file = item.frames ? item.frames[0] : item.file;
@@ -364,9 +402,7 @@ const CatRoom = (function () {
           c.t -= per;
           c.i++;
           if (c.i >= c.frame.count) c.i = (c.frame.loop === "once") ? c.frame.count - 1 : 0;
-          const F = CAT_SHEET.frame, scale = c.size / F;
-          c.el.style.backgroundPosition =
-            `${-(c.frame.from + c.i) * F * scale}px ${-c.frame.row * F * scale}px`;
+          applyFrame(c);
         }
       });
       raf = requestAnimationFrame(step);
@@ -374,6 +410,81 @@ const CatRoom = (function () {
     raf = requestAnimationFrame(step);
   }
   function stopTicker() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+
+  /* Put one frame on screen. Used when an animation is swapped. */
+  function applyFrame(c) {
+    const F = CAT_SHEET.frame, scale = c.size / F;
+    c.el.style.backgroundPosition =
+      `${-(c.frame.from + c.i) * F * scale}px ${-c.frame.row * F * scale}px`;
+  }
+
+  /* =====================================================================
+     REACTIONS — petting and playing.
+     Both are FREE and give no coins. They exist purely so the room is
+     nice to touch. Coins stay tied to the nutrition games, which is a
+     deliberate rule of this project, not an oversight.
+     ===================================================================== */
+
+  /* Temporarily swap a cat's animation, then put it back. */
+  function react(c, poseName, ms) {
+    const f = catFrame(poseName);
+    if (!f) return;
+    if (!c.base) c.base = c.frame;
+    c.frame = f; c.i = 0; c.t = 0;
+    applyFrame(c);
+    clearTimeout(c.revert);
+    c.revert = setTimeout(function () {
+      c.frame = c.base; c.i = 0; c.t = 0;
+      if (c.el.isConnected) applyFrame(c);
+    }, ms);
+  }
+
+  /* A little symbol floating up from a point in the room. */
+  function pop(room, xPct, yPct, symbol) {
+    const el = document.createElement("div");
+    el.className = "cr-pop";
+    el.style.left = xPct + "%";
+    el.style.top = yPct + "%";
+    el.textContent = symbol;
+    room.appendChild(el);
+    setTimeout(function () { el.remove(); }, 1200);
+  }
+
+  /* Pet a cat: it purrs and looks pleased. Free, always available. */
+  function petCat(c) {
+    const room = host.querySelector(".cr-room");
+    react(c, "meow-sit", 1500);
+    pop(room, parseFloat(c.el.style.left), parseFloat(c.el.style.top), "💛");
+    say(tx("purr"));
+  }
+
+  /* Play with a toy: the nearest cat CUTS over to it, plays, and cuts
+     back. Cutting rather than walking is the same trick the room already
+     uses between visits — no pathfinding, nothing to go wrong. */
+  function playWithToy(x, y) {
+    if (!cats.length) return;
+    const room = host.querySelector(".cr-room");
+
+    /* whichever cat is nearest the toy joins in */
+    let best = cats[0], bestD = 1e9;
+    cats.forEach(c => {
+      const d = Math.hypot(parseFloat(c.el.style.left) - x,
+                           (parseFloat(c.el.style.top) - y) * 0.75);
+      if (d < bestD) { bestD = d; best = c; }
+    });
+
+    const homeX = best.el.style.left, homeY = best.el.style.top;
+    best.el.style.left = (x + 9) + "%";        /* stand beside it, not on it */
+    best.el.style.top = y + "%";
+    react(best, "play", 3200);
+    pop(room, x, y, "✨");
+    say(tx("playing"));
+
+    clearTimeout(best.goHome);
+    best.goHome = setTimeout(function () {
+      if (best.el.isConnected) { best.el.style.left = homeX; best.el.style.top = homeY; }
+    }, 3200);
+  }
 
   /* =====================================================================
      THE SHOP
@@ -409,14 +520,23 @@ const CatRoom = (function () {
       /* Split into groups (bowls, beds, posts...) and give each a small
          heading, in the order the tab lists its categories. A single
          un-broken grid of 22 tiles is hard to read and looks unfinished. */
-      cells = def.of.map(category => {
+      /* Accessories belong to one cat, so say which one is being dressed. */
+      let who = "";
+      if (def.id === "acc") {
+        const active = CAT_COLORS.find(c => c.id === cat.active);
+        who = active
+          ? `<div class="cr-hint" style="margin:6px 0 0"><b>${tx("dressing")}${nm(active)}</b><br>${tx("dressHint")}</div>`
+          : "";
+      }
+
+      cells = who + def.of.map(category => {
         const group = items.filter(i => i.category === category);
         if (!group.length) return "";
         const heading = GROUPS[category] ? nm(GROUPS[category]) : category;
         const tiles = group.map(i => {
           const owned = CatState.owns(cat, i.id);
           const wearable = CatState.isWearable(i);
-          const on = wearable ? (cat.worn || []).indexOf(i.id) >= 0
+          const on = wearable ? CatState.wornBy(cat).indexOf(i.id) >= 0
                               : cat.placed[i.category] === i.id;
           const label = !owned ? "🪙 " + (i.price || 0)
                        : on ? (wearable ? tx("wearing") : tx("inRoom"))
@@ -454,6 +574,7 @@ const CatRoom = (function () {
     const hasWater = !!cat.placed.water;
     const coins    = (typeof Buddy !== "undefined") ? Buddy.coins() : 0;
 
+    const mouths    = CatState.catCount(cat);
     const foodFull  = hasBowl  && foodLvl  >= BOWL_RULES.maxLevel;
     const waterFull = hasWater && waterLvl >= WATER_RULES.maxLevel;
 
@@ -469,6 +590,7 @@ const CatRoom = (function () {
         <span class="cr-coins">🪙 ${coins}</span>
       </div>
       <div class="cr-room"></div>
+      <div class="cr-hint">${tx("petHint")}${mouths > 1 ? " · " + tx("appetite").replace("{n}", mouths) : ""}</div>
       <div class="cr-acts">
         <button class="cr-btn" data-act="feed:food" ${(!hasBowl || foodFull) ? "disabled" : ""}>
           🍚 ${hasBowl ? tx("feed") + " −" + BOWL_RULES.feedCost : tx("needBowl")}
@@ -479,8 +601,33 @@ const CatRoom = (function () {
           <span class="cr-sub">${sub(hasWater, waterFull, "water", waterLvl)}</span>
         </button>
       </div>
+      ${tipHTML()}
       ${shopHTML(cat)}
     </div>`;
+  }
+
+  /* =====================================================================
+     TODAY'S TIP.
+     Picks one of the `tip` lines already written on the foods in
+     foods-data.js, and shows the same one all day. It costs nothing to
+     run, gives a small reason to look in daily, and — more to the point
+     — every time someone opens the room to pet a cat they read one line
+     of nutrition. That is the whole purpose of the pet.
+
+     ✏️ TO ADD MORE TIPS: open foods-data.js and add a `tip` to any food.
+     Only a handful have one so far, so the same few will repeat. This is
+     an easy and genuinely useful job for a nutrition person — no coding.
+     ===================================================================== */
+  function tipHTML() {
+    if (typeof FOODS === "undefined") return "";
+    const pool = FOODS.filter(f => f.tip && (f.tip.zh || f.tip.en));
+    if (!pool.length) return "";
+    /* same tip all day: pick by the date, not at random, so it does not
+       flicker to a different one every time the panel is reopened */
+    const day = Math.floor(Date.now() / 86400000);
+    const f = pool[day % pool.length];
+    const text = (lang === "zh") ? (f.tip.zh || f.tip.en) : (f.tip.en || f.tip.zh);
+    return `<div class="cr-tip"><b>${tx("tipTitle")} ${f.emoji}</b><span>${text}</span></div>`;
   }
 
   /* =====================================================================
@@ -519,7 +666,7 @@ const CatRoom = (function () {
         const r = CatState.buy(id);
         say(r.ok ? tx("bought") : tx("noCoins"));
       } else if (CatState.isWearable(item)) {
-        CatState.wear(id);
+        CatState.wear(id);          /* dresses the cat that is currently out */
       } else {
         CatState.place(id);
       }

@@ -125,6 +125,23 @@ const CatState = (function () {
       if (saved[key] === undefined || saved[key] === null) saved[key] = fresh[key];
     }
 
+    /* MIGRATION: accessories used to be one shared list on the household
+       (`worn`). They now belong to individual cats, so anything saved
+       under the old shape moves onto whichever cat was out at the time
+       rather than being dropped. */
+    if (Array.isArray(saved.worn) && saved.worn.length && saved.active &&
+        saved.cats && saved.cats[saved.active] &&
+        !(saved.cats[saved.active].worn || []).length) {
+      saved.cats[saved.active].worn = saved.worn.slice();
+      saved.worn = [];
+    }
+    /* Make sure every cat has a wardrobe, even ones saved before this. */
+    if (saved.cats) {
+      Object.keys(saved.cats).forEach(function (k) {
+        if (!Array.isArray(saved.cats[k].worn)) saved.cats[k].worn = [];
+      });
+    }
+
     /* Repair the dishes if anything is missing or the wrong shape. */
     if (!saved.dishes || typeof saved.dishes !== "object") saved.dishes = fresh.dishes;
     ["food", "water"].forEach(function (d) {
@@ -147,12 +164,22 @@ const CatState = (function () {
      levels were lost (so the page can say "the bowl is emptier than you
      left it" if it wants to).
      ------------------------------------------------------------------ */
+  /* How long one level actually lasts, once appetite is taken into
+     account. More cats eat faster. With one cat this is just decayHours. */
+  function periodFor(cat, dish) {
+    const rules = rulesFor(dish);
+    if (!rules) return 0;
+    const mouths = Math.max(1, (cat && cat.cats) ? Object.keys(cat.cats).length : 1);
+    const appetite = 1 + (rules.extraCatAppetite || 0) * (mouths - 1);
+    return (Math.max(1, rules.decayHours) * 60 * 60 * 1000) / appetite;
+  }
+
   function settleDish(cat, dish, now) {
     const rules = rulesFor(dish);
     if (!rules) return 0;
     const d = cat.dishes[dish];
     if (!d) return 0;
-    const periodMs = Math.max(1, rules.decayHours) * 60 * 60 * 1000;
+    const periodMs = periodFor(cat, dish);
 
     /* First time ever, or a save with no timestamp: start the clock now. */
     if (!d.since) { d.since = now; return 0; }
@@ -314,7 +341,7 @@ const CatState = (function () {
       now = now || Date.now();
       const rules = rulesFor(dish);
       if (!rules || !cat || !cat.dishes[dish] || cat.dishes[dish].level <= 0) return null;
-      const periodMs = Math.max(1, rules.decayHours) * 60 * 60 * 1000;
+      const periodMs = periodFor(cat, dish);
       const left = (cat.dishes[dish].since + periodMs) - now;
       return Math.max(0, Math.round(left / (60 * 60 * 1000)));
     },
@@ -356,8 +383,13 @@ const CatState = (function () {
       /* Put it straight into the room, so buying something always has a
          visible result. Anything already in that slot is swapped out but
          stays owned, so nothing is ever lost by buying. */
-      if (item.category && !this.isWearable(item)) cat.placed[item.category] = id;
-      else if (this.isWearable(item)) cat.worn.push(id);
+      if (!this.isWearable(item)) {
+        if (item.category) cat.placed[item.category] = id;
+      } else if (cat.active && cat.cats[cat.active]) {
+        /* dress the cat that is currently out */
+        if (!cat.cats[cat.active].worn) cat.cats[cat.active].worn = [];
+        cat.cats[cat.active].worn.push(id);
+      }
 
       writeRaw(cat);
       return { ok: true, spent: price, placed: true };
@@ -385,19 +417,39 @@ const CatState = (function () {
       return { ok: true, placed: cat.placed[item.category] === id };
     },
 
-    /* Put an owned accessory on the cat, or take it off. */
-    wear(id) {
+    /* ----------------------------------------------------------------
+       Put an owned accessory on a cat, or take it off.
+
+       Accessories belong to ONE CAT, not to the household: the black cat
+       can wear a red bow while the calico wears a blue collar. Buying is
+       still shared, so you only pay for a bow once and can move it
+       between cats freely.
+       With no colour given it dresses whichever cat is currently out.
+       ---------------------------------------------------------------- */
+    wear(id, colourId) {
       const item = this.item(id);
       if (!item) return { ok: false, reason: "unknown" };
       const cat = readRaw();
       if (!this.owns(cat, id)) return { ok: false, reason: "not-owned" };
 
-      const at = cat.worn.indexOf(id);
-      if (at >= 0) cat.worn.splice(at, 1);
-      else cat.worn.push(id);
+      const who = colourId || cat.active;
+      if (!who || !cat.cats[who]) return { ok: false, reason: "no-cat" };
+      if (!cat.cats[who].worn) cat.cats[who].worn = [];
+
+      const list = cat.cats[who].worn;
+      const at = list.indexOf(id);
+      if (at >= 0) list.splice(at, 1);
+      else list.push(id);
 
       writeRaw(cat);
-      return { ok: true, worn: at < 0 };
+      return { ok: true, worn: at < 0, colour: who };
+    },
+
+    /* What a given cat is wearing (defaults to the one that is out). */
+    wornBy(cat, colourId) {
+      const who = colourId || (cat && cat.active);
+      if (!cat || !who || !cat.cats[who]) return [];
+      return cat.cats[who].worn || [];
     },
 
     /* ================================================================
@@ -488,7 +540,7 @@ const CatState = (function () {
         }
       }
 
-      cat.cats[colourId] = { adoptedAt: now };
+      cat.cats[colourId] = { adoptedAt: now, worn: [] };
       cat.active = colourId;
       writeRaw(cat);
       return { ok: true, spent: price, count: Object.keys(cat.cats).length, switched: false };
@@ -667,6 +719,12 @@ const CatState = (function () {
     /* Everything currently purchasable, seasons applied. */
     catalogue(when) {
       return this.allItems().filter(i => CatState.inSeason(i, when));
+    },
+
+    /* How many real hours one level of this dish currently lasts, with
+       the household's appetite taken into account. */
+    hoursPerLevel(cat, dish) {
+      return Math.round(periodFor(cat, dish) / (60 * 60 * 1000) * 10) / 10;
     },
 
     /* Exposed for the test page only. Lets a test pretend that hours

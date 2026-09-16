@@ -81,8 +81,28 @@ const CAT_BOWLS = [
 const BOWL_RULES = {
   feedStep:   1,    // levels the bowl rises per "feed" tap
   feedCost:   5,    // coins per feed tap
-  decayHours: 12,   // real hours that pass to drop the bowl by 1 level
+  decayHours: 12,   // real hours to drop the bowl by 1 level, with ONE cat
   maxLevel:   4,    // top level (matches the last file in "levels")
+
+  /* MORE CATS EAT MORE.
+     Each cat beyond the first makes the bowl empty faster. 0.25 means a
+     quarter more appetite per extra cat:
+
+        1 cat   bowl lasts 12h a level   ~10 coins a day
+        2 cats                 ~9.6h     ~12 coins a day
+        3 cats                   ~8h     ~15 coins a day
+        4 cats                 ~6.9h     ~17 coins a day
+
+     Deliberately kept gentle: even a full house of four never costs
+     quite twice a single cat. Feeding should feel like a reason to play
+     a round of the quiz, never like a bill arriving.
+
+     So a full house genuinely needs you to play the games, rather than
+     coasting on the daily check-in — which is the point. And because an
+     empty bowl still costs nothing at all, a busy week just means a
+     lower bowl, never an unhappy cat.
+     Set this to 0 and extra cats eat nothing extra. */
+  extraCatAppetite: 0.25,
 
   /* ===================================================================
      🚫 PHILOSOPHY — THE LINE THAT MUST NOT BE CROSSED
@@ -149,6 +169,11 @@ const WATER_RULES = {
   feedCost:   3,    // coins per top-up (cheaper than food on purpose)
   decayHours: 24,   // real hours to drop one level
   maxLevel:   1,    // 1 = simply full or empty (one picture)
+
+  /* Extra cats do NOT drink faster, by choice — food already scales, and
+     making everything scale at once turns a full house into a chore.
+     Set it to 0.25 (like the food bowl) if you want water to scale too. */
+  extraCatAppetite: 0,
 
   /* Same rule as the food bowl, and it is not negotiable: an empty water
      dish must never make the cat sad, sick, thirsty or unhappy. It is an
