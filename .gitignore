@@ -1,0 +1,11 @@
+# Screenshots and scratch files from testing — never part of the website.
+bench.png
+funding.png
+room.png
+lab*.png
+testsheet.png
+*.log
+
+# Editor / OS clutter
+.DS_Store
+Thumbs.db
