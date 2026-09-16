@@ -69,12 +69,12 @@ const VENUES = [
 const FOODS = [
 
   /* ---------- 早餐店 Breakfast shop ---------- */
-  { id: "danbing",   zh: "原味蛋餅",   en: "Egg crepe (dan bing)", emoji: "🫓",
+  { id: "danbing",   zh: "原味蛋餅",   en: "Egg crepe (dan bing)", emoji: "🌯",
     role: "main", venues: ["breakfast"],
     nutrition: { protein: 10, fiber: 1,   sodium: 600,  calcium: 60 },
     wholeGrain: false, serving: "1份" },
 
-  { id: "congzhua",  zh: "蔥抓餅",     en: "Scallion pancake", emoji: "🥞",
+  { id: "congzhua",  zh: "蔥抓餅",     en: "Scallion pancake", emoji: "🫓",
     role: "main", venues: ["breakfast"],
     nutrition: { protein: 6,  fiber: 1.5, sodium: 550,  calcium: 20 },
     wholeGrain: false, serving: "1份" },
@@ -221,10 +221,7 @@ const FOODS = [
     nutrition: { protein: 10, fiber: 1,   sodium: 300,  calcium: 150 },
     wholeGrain: false },
 
-  { id: "seaweed",   zh: "海帶",       en: "Seaweed", emoji: "🪸",
-    /* HIDDEN: 🪸 is CORAL, not seaweed, and is new enough to show as an empty box on older phones.
-       Delete the `hidden` line below to show this food again. */
-    hidden: true,
+  { id: "seaweed",   zh: "海帶",       en: "Seaweed", emoji: "🌿",
     role: "addon", venues: ["noodle"],
     nutrition: { protein: 2,  fiber: 2,   sodium: 350,  calcium: 80 },
     wholeGrain: false },
